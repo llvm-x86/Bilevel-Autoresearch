@@ -50,6 +50,33 @@ class TestExtractMethodBody:
         assert body.startswith("def decide(")
         assert "fire_level2" in body
 
+    def test_extracts_decide_from_helper_class_fragment(self):
+        """LLM often emits helper class + decide; extract decide only."""
+        code = textwrap.dedent(
+            '''\
+            class ValueCascadeAnalyzer:
+                def __init__(self):
+                    self.threshold = 0.85
+
+                def detect(self):
+                    return False
+
+            def decide(self, inner_trace, l2_sessions, completed_outer_cycles, config=None):
+                fire_level2 = True
+                fire_level3 = False
+                return ScheduleDecision(
+                    fire_level2=fire_level2,
+                    fire_level3=fire_level3,
+                    reason="ok",
+                    batch_size=2,
+                )
+            '''
+        )
+        body = self.researcher._extract_method_body(code, "decide")
+        assert body.startswith("def decide(")
+        assert "ValueCascadeAnalyzer" not in body
+        assert "fire_level2" in body
+
     def test_rejects_full_class_without_target_method(self):
         code = textwrap.dedent(
             '''\
@@ -168,3 +195,113 @@ class TestNormalizeCodegen:
         normalized = self.researcher._normalize_codegen(wrapped, "replace_method", "decide")
         assert normalized.startswith("def decide(")
         assert "class AdaptiveMechanismSchedule" not in normalized
+
+
+class TestSanitizeDecideCode:
+    def setup_method(self):
+        self.researcher = ScheduleMechanismResearcher(api_key="mock")
+
+    def test_sanitize_replaces_unknown_self_attr(self):
+        code = textwrap.dedent(
+            '''\
+            def decide(self, inner_trace, l2_sessions, completed_outer_cycles, config=None):
+                fire_level2 = True
+                fire_level3 = False
+                low = self.min_discard_rate_threshold
+                high = self.discard_rate_threshold
+                if low > high:
+                    fire_level2 = False
+                return ScheduleDecision(
+                    fire_level2=fire_level2,
+                    fire_level3=fire_level3,
+                    reason="test",
+                    batch_size=self.level2_interval,
+                )
+            '''
+        )
+        sanitized = self.researcher._sanitize_decide_code(code)
+        assert "min_discard_rate_threshold" not in sanitized
+        assert "self.discard_rate_threshold" in sanitized
+
+    def test_sanitize_wraps_l2_session_attr_access(self):
+        code = textwrap.dedent(
+            '''\
+            def decide(self, inner_trace, l2_sessions, completed_outer_cycles, config=None):
+                fire_level2 = True
+                fire_level3 = False
+                for s in l2_sessions:
+                    if s.applied and s.validated is False:
+                        fire_level3 = True
+                return ScheduleDecision(
+                    fire_level2=fire_level2,
+                    fire_level3=fire_level3,
+                    reason="test",
+                )
+            '''
+        )
+        sanitized = self.researcher._sanitize_decide_code(code)
+        assert "getattr(s, 'applied'" in sanitized
+        assert "getattr(s, 'validated'" in sanitized
+
+
+ATTEMPT2_CODE_PATH = (
+    REPO_ROOT
+    / "trilevel_research"
+    / "experiments"
+    / "bilevel_improves_trilevel"
+    / "results"
+    / "ouroboros"
+    / "schedule_l2_attempt_2"
+    / "mechanism_sessions"
+    / "round_1"
+    / "04_code_attempt_1.py"
+)
+
+
+class TestAttempt2SamplePatch:
+    def setup_method(self):
+        self.researcher = ScheduleMechanismResearcher(api_key="mock")
+
+    @pytest.mark.skipif(not ATTEMPT2_CODE_PATH.exists(), reason="attempt 2 fixture missing")
+    def test_attempt2_code_validates_after_fixes(self, tmp_path):
+        raw_code = ATTEMPT2_CODE_PATH.read_text(encoding="utf-8")
+        schedule = tmp_path / "adaptive_mechanism_schedule.py"
+        schedule.write_text(CANONICAL_SCHEDULE.read_text(encoding="utf-8"), encoding="utf-8")
+        result = ScheduleMechanismResult(
+            session_id="attempt2_test",
+            hypothesis="attempt2 fixture",
+            mechanism_name="schedule_mechanism_attempt2",
+            implementation_strategy="replace_method",
+            target="decide",
+            spec="",
+            code=raw_code,
+            session_dir=tmp_path / "session",
+        )
+        result.session_dir.mkdir(parents=True, exist_ok=True)
+        assert self.researcher.apply(schedule, result) is True
+        assert self.researcher.validate(schedule, result) is True
+        assert result.validation_error == ""
+        assert "import_fail" not in (result.validation_error or "")
+
+    @pytest.mark.skipif(not ATTEMPT2_CODE_PATH.exists(), reason="attempt 2 fixture missing")
+    def test_attempt2_validate_failure_is_explicit_not_import_fail(self, tmp_path):
+        """If validation fails, error must be validate_error not generic import_fail."""
+        raw_code = ATTEMPT2_CODE_PATH.read_text(encoding="utf-8")
+        schedule = tmp_path / "adaptive_mechanism_schedule.py"
+        schedule.write_text(CANONICAL_SCHEDULE.read_text(encoding="utf-8"), encoding="utf-8")
+        result = ScheduleMechanismResult(
+            session_id="attempt2_explicit",
+            hypothesis="attempt2 fixture",
+            mechanism_name="schedule_mechanism_attempt2",
+            implementation_strategy="replace_method",
+            target="decide",
+            spec="",
+            code=raw_code,
+            session_dir=tmp_path / "session",
+        )
+        result.session_dir.mkdir(parents=True, exist_ok=True)
+        self.researcher.apply(schedule, result)
+        self.researcher.validate(schedule, result)
+        if not result.validated:
+            assert result.validation_error.startswith("validate_error:")
+            assert result.validation_error != "import_fail"

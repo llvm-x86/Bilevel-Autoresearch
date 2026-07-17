@@ -2,11 +2,9 @@
 from __future__ import annotations
 
 import ast
-import importlib.util
 import json
 import logging
 import re
-import sys
 import textwrap
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -17,8 +15,6 @@ from core.base_mechanism_research import (
 )
 
 logger = logging.getLogger(__name__)
-
-REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
 EXPLORE_SYSTEM = """You are a meta-researcher specializing in GPU hyperparameter search.
 Propose concrete mechanism changes to improve GpuBenchRunner's ability to find
@@ -86,10 +82,6 @@ CODEGEN_PROMPT = """\
 
 Write ONLY the Python fragment. Raw Python, no markdown fences.
 The fragment patches domains/gpu_bench_opt/runner.py (GpuBenchRunner class).
-
-Prefer a SMALL new_helper_class (under ~80 lines) that GpuBenchRunner can instantiate.
-Do NOT rewrite GpuBenchRunner or replace entire methods unless the spec explicitly requires replace_method.
-Do NOT add imports from nonexistent modules.
 """
 
 
@@ -255,68 +247,28 @@ class GpuBenchMechanismResearcher(BaseMechanismResearcher):
         result.applied = True
         return True
 
-    def validate(
-        self,
-        runner_path: Path,
-        result: GpuBenchMechanismResult | None = None,
-    ) -> bool:
+    def validate(self, runner_path: Path) -> bool:
+        import subprocess
+
         runner_path = Path(runner_path)
-        if str(REPO_ROOT) not in sys.path:
-            sys.path.insert(0, str(REPO_ROOT))
-
-        import core.llm_client  # noqa: F401
-        import trilevel_research.domains.gpu_bench_opt.config  # noqa: F401
-        import trilevel_research.domains.gpu_bench_opt.search_config  # noqa: F401
-
-        code = runner_path.read_text(encoding="utf-8")
-        original_code = code
-        if "from .config import" in code:
-            code = code.replace(
-                "from .config import",
-                "from trilevel_research.domains.gpu_bench_opt.config import",
-            )
-        if "from .search_config import" in code:
-            code = code.replace(
-                "from .search_config import",
-                "from trilevel_research.domains.gpu_bench_opt.search_config import",
-            )
-        if code != original_code:
-            runner_path.write_text(code, encoding="utf-8")
-
-        module_name = f"_gpu_mech_validate_{runner_path.stat().st_mtime_ns}"
+        project_root = runner_path.parent.parent.parent
+        module_path = (
+            runner_path.relative_to(project_root)
+            .with_suffix("")
+            .as_posix()
+            .replace("/", ".")
+        )
+        cmd = [
+            "python",
+            "-c",
+            f"import sys; sys.path.insert(0, '{project_root}'); "
+            f"import {module_path}; print('IMPORT_OK')",
+        ]
         try:
-            spec = importlib.util.spec_from_file_location(module_name, runner_path)
-            if spec is None or spec.loader is None:
-                msg = "validate_error: could not load runner module spec"
-                if result is not None:
-                    result.validation_error = msg
-                return False
-            module = importlib.util.module_from_spec(spec)
-            sys.modules[module_name] = module
-            spec.loader.exec_module(module)
-            cls = getattr(module, self.RUNNER_CLASS, None)
-            if cls is None:
-                msg = f"validate_error: {self.RUNNER_CLASS} not found in patched module"
-                if result is not None:
-                    result.validation_error = msg
-                return False
-            if not hasattr(cls, "run_iteration"):
-                msg = "validate_error: GpuBenchRunner missing run_iteration"
-                if result is not None:
-                    result.validation_error = msg
-                return False
-            if result is not None:
-                result.validated = True
-                result.validation_error = ""
-            return True
-        except Exception as exc:
-            msg = f"validate_error: {type(exc).__name__}: {exc}"
-            if result is not None:
-                result.validation_error = msg
-            logger.debug("Runner validate failed: %s", exc)
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            return "IMPORT_OK" in proc.stdout
+        except Exception:
             return False
-        finally:
-            sys.modules.pop(module_name, None)
 
     def _insert_helper_class(self, original: str, new_class_code: str) -> str:
         marker = "\nclass GpuBenchRunner:"
@@ -436,15 +388,11 @@ class GpuBenchMechanismResearcher(BaseMechanismResearcher):
         return "Search converging slowly — need better exploration."
 
     def _build_codegen_task(self, mechanism_name: str, impl_strategy: str, target: str, spec: str) -> str:
-        del spec
         if impl_strategy == "replace_method":
             return f"Write a REPLACEMENT for GpuBenchRunner.{target}."
         if impl_strategy == "modify_init":
             return "Write statements to append to GpuBenchRunner.__init__ (8-space indent)."
-        return (
-            f"Implement a SMALL helper class '{mechanism_name}' (new_helper_class strategy) "
-            f"used by GpuBenchRunner. Do not rewrite GpuBenchRunner itself."
-        )
+        return f"Implement mechanism '{mechanism_name}' for GpuBenchRunner."
 
     def _read_reference_code(self, runner_code: str, impl_strategy: str) -> str:
         if impl_strategy == "replace_method":
@@ -461,14 +409,7 @@ class GpuBenchMechanismResearcher(BaseMechanismResearcher):
             "implementation_strategy": result.implementation_strategy,
             "target": result.target,
             "code_retries": result.code_retries,
-            "applied": result.applied,
-            "validated": result.validated,
-            "validation_error": result.validation_error,
         }
         (session_dir / "06_summary.json").write_text(
             json.dumps(summary, indent=2), encoding="utf-8"
         )
-
-    def update_session_summary(self, result: GpuBenchMechanismResult, session_dir: Path) -> None:
-        """Rewrite 06_summary.json after apply/validate in the controller."""
-        self._save_summary(result, session_dir)

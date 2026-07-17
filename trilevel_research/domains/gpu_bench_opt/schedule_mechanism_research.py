@@ -12,7 +12,9 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
-from core.base_mechanism_research import BaseMechanismResearcher, CODEGEN_SYSTEM, FIX_PROMPT
+from types import SimpleNamespace
+
+from core.base_mechanism_research import BaseMechanismResearcher, CODEGEN_SYSTEM
 
 logger = logging.getLogger(__name__)
 
@@ -176,6 +178,27 @@ Write an implementation specification:
 5. **Integration points**
 """
 
+SCHEDULE_FIX_PROMPT = """\
+The decide() method you generated failed validation:
+
+```
+{error}
+```
+
+Here is the code that failed:
+
+```python
+{code}
+```
+
+Fix the error. Return ONLY the corrected `def decide(self, inner_trace, l2_sessions, completed_outer_cycles, config=None):` method body.
+Rules:
+- NO new classes, NO imports, NO helper classes.
+- Use ONLY these self fields: level2_interval, level3_interval, discard_rate_threshold, revert_rate_threshold, lookback_iters.
+- Access l2_sessions items with getattr(s, 'applied', False), getattr(s, 'validated', None), getattr(s, 'blocked_by_tabu', False), getattr(s, 'mechanism_name', '').
+- Set local vars fire_level2 and fire_level3, then return ScheduleDecision(fire_level2=..., fire_level3=..., reason=..., batch_size=...).
+"""
+
 CODEGEN_PROMPT = """\
 ## Implementation Specification
 {spec}
@@ -192,10 +215,37 @@ Write ONLY the Python fragment. Raw Python, no markdown fences.
 The fragment patches trilevel_research/core/adaptive_mechanism_schedule.py
 (AdaptiveMechanismSchedule class).
 
-For replace_method on decide: output ONLY the decide method (def decide(...): ...).
-Use fire_level2/fire_level3 and return ScheduleDecision(reason=..., batch_size=...).
-Do NOT redefine the class or import nonexistent modules.
+For replace_method on decide: output ONLY this method signature and body:
+  def decide(self, inner_trace, l2_sessions, completed_outer_cycles, config=None):
+
+STRICT RULES:
+- NO new classes, NO imports, NO helper classes — only the decide() method.
+- Use ONLY these self fields: level2_interval, level3_interval, discard_rate_threshold, revert_rate_threshold, lookback_iters.
+- Access l2_sessions items with getattr(s, 'applied', False), getattr(s, 'validated', None), getattr(s, 'blocked_by_tabu', False), getattr(s, 'mechanism_name', '').
+- Set local vars fire_level2 and fire_level3, then return ScheduleDecision(fire_level2=..., fire_level3=..., reason=..., batch_size=...).
+- Do NOT reference self.min_discard_rate_threshold or any other self.* field not listed above.
 """
+
+ALLOWED_SELF_ATTRS = frozenset({
+    "level2_interval",
+    "level3_interval",
+    "discard_rate_threshold",
+    "revert_rate_threshold",
+    "lookback_iters",
+})
+
+SELF_ATTR_REPLACEMENTS = {
+    "min_discard_rate_threshold": "0.0",
+    "max_discard_rate_threshold": "self.discard_rate_threshold",
+    "discard_threshold": "self.discard_rate_threshold",
+}
+
+L2_SESSION_ATTR_DEFAULTS = {
+    "applied": "False",
+    "validated": "None",
+    "blocked_by_tabu": "False",
+    "mechanism_name": "''",
+}
 
 
 @dataclass
@@ -364,7 +414,11 @@ class ScheduleMechanismResearcher(BaseMechanismResearcher):
         result.applied = True
         return True
 
-    def validate(self, schedule_path: Path) -> bool:
+    def validate(
+        self,
+        schedule_path: Path,
+        result: ScheduleMechanismResult | None = None,
+    ) -> bool:
         schedule_path = Path(schedule_path)
         if str(REPO_ROOT) not in sys.path:
             sys.path.insert(0, str(REPO_ROOT))
@@ -373,34 +427,68 @@ class ScheduleMechanismResearcher(BaseMechanismResearcher):
         try:
             spec = importlib.util.spec_from_file_location(module_name, schedule_path)
             if spec is None or spec.loader is None:
+                msg = "validate_error: could not load schedule module spec"
+                if result is not None:
+                    result.validation_error = msg
                 return False
             module = importlib.util.module_from_spec(spec)
             sys.modules[module_name] = module
             spec.loader.exec_module(module)
             cls = getattr(module, self.TARGET_CLASS, None)
             if cls is None:
+                msg = f"validate_error: {self.TARGET_CLASS} not found in patched module"
+                if result is not None:
+                    result.validation_error = msg
                 return False
             instance = cls()
+            l2_sessions = [
+                SimpleNamespace(
+                    applied=True,
+                    validated=False,
+                    blocked_by_tabu=False,
+                    mechanism_name="fixture_mech",
+                ),
+                SimpleNamespace(
+                    applied=False,
+                    validated=None,
+                    blocked_by_tabu=True,
+                    mechanism_name="tabu_mech",
+                ),
+            ]
             decision = instance.decide(
                 VALIDATE_FIXTURE_TRACE,
-                [],
+                l2_sessions,
                 completed_outer_cycles=3,
             )
             schedule_decision = getattr(module, "ScheduleDecision", None)
             if schedule_decision is not None and not isinstance(decision, schedule_decision):
+                msg = "validate_error: decide() did not return ScheduleDecision"
+                if result is not None:
+                    result.validation_error = msg
                 return False
-            return (
+            if not (
                 isinstance(getattr(decision, "fire_level2", None), bool)
                 and isinstance(getattr(decision, "fire_level3", None), bool)
-            )
+            ):
+                msg = "validate_error: decide() must return bool fire_level2 and fire_level3"
+                if result is not None:
+                    result.validation_error = msg
+                return False
+            if result is not None:
+                result.validated = True
+                result.validation_error = ""
+            return True
         except Exception as exc:
+            msg = f"validate_error: {type(exc).__name__}: {exc}"
+            if result is not None:
+                result.validation_error = msg
             logger.debug("Schedule validate failed: %s", exc)
             return False
         finally:
             sys.modules.pop(module_name, None)
 
     def _extract_method_body(self, code: str, target: str) -> str:
-        """Extract a single method body; reject full-class redefinitions for replace_method."""
+        """Extract a single method body; ignore unrelated helper classes."""
         code = code.strip()
         if not code:
             raise ValueError("empty codegen fragment")
@@ -423,9 +511,7 @@ class ScheduleMechanismResearcher(BaseMechanismResearcher):
                     raise ValueError(
                         f"class {self.TARGET_CLASS} redefinition must not be used for replace_method"
                     )
-                raise ValueError(
-                    f"replace_method must not redefine class {node.name}; output only def {target}(...)"
-                )
+                continue
 
         for node in tree.body:
             if isinstance(node, ast.FunctionDef) and node.name == target:
@@ -436,7 +522,66 @@ class ScheduleMechanismResearcher(BaseMechanismResearcher):
         if match:
             return match.group(1).rstrip()
 
+        top_level = re.search(rf"(^def {re.escape(target)}\(.*)", code, flags=re.MULTILINE | re.DOTALL)
+        if top_level:
+            start = top_level.start(1)
+            return code[start:].rstrip()
+
         raise ValueError(f"could not extract def {target}(...) from codegen fragment")
+
+    def _sanitize_decide_code(self, code: str) -> str:
+        """Replace unknown self.* attrs and bare l2_sessions attribute access."""
+        try:
+            tree = ast.parse(code)
+        except SyntaxError:
+            return code
+
+        class Sanitizer(ast.NodeTransformer):
+            def visit_Attribute(self, node: ast.Attribute) -> ast.AST:
+                self.generic_visit(node)
+                if isinstance(node.value, ast.Name) and node.value.id == "self":
+                    attr = node.attr
+                    if attr in ALLOWED_SELF_ATTRS:
+                        return node
+                    if attr in SELF_ATTR_REPLACEMENTS:
+                        replacement = SELF_ATTR_REPLACEMENTS[attr]
+                        if replacement.startswith("self."):
+                            sub_attr = replacement.split(".", 1)[1]
+                            return ast.Attribute(
+                                value=ast.Name(id="self", ctx=ast.Load()),
+                                attr=sub_attr,
+                                ctx=node.ctx,
+                            )
+                        return ast.Constant(value=ast.literal_eval(replacement))
+                    return ast.Call(
+                        func=ast.Name(id="getattr", ctx=ast.Load()),
+                        args=[
+                            ast.Name(id="self", ctx=ast.Load()),
+                            ast.Constant(value=attr),
+                            ast.Constant(value=None),
+                        ],
+                        keywords=[],
+                    )
+                if (
+                    isinstance(node.value, ast.Name)
+                    and node.value.id in {"s", "session", "rec", "record"}
+                    and node.attr in L2_SESSION_ATTR_DEFAULTS
+                ):
+                    default = L2_SESSION_ATTR_DEFAULTS[node.attr]
+                    return ast.Call(
+                        func=ast.Name(id="getattr", ctx=ast.Load()),
+                        args=[
+                            node.value,
+                            ast.Constant(value=node.attr),
+                            ast.Constant(value=ast.literal_eval(default)),
+                        ],
+                        keywords=[],
+                    )
+                return node
+
+        sanitized_tree = Sanitizer().visit(tree)
+        ast.fix_missing_locations(sanitized_tree)
+        return ast.unparse(sanitized_tree)
 
     def _validate_codegen_schema(self, code: str, strategy: str, target: str) -> str | None:
         """Return an error string if codegen violates replace_method constraints."""
@@ -494,7 +639,7 @@ class ScheduleMechanismResearcher(BaseMechanismResearcher):
             (session_dir / f"04_error_{attempt + 1}.txt").write_text(error, encoding="utf-8")
 
             code = self.client.call(
-                FIX_PROMPT.format(error=error[:2000], code=code[:4000]),
+                SCHEDULE_FIX_PROMPT.format(error=error[:2000], code=code[:4000]),
                 system=CODEGEN_SYSTEM,
                 max_tokens=6000,
             )
@@ -517,11 +662,14 @@ class ScheduleMechanismResearcher(BaseMechanismResearcher):
         if strategy != "replace_method":
             return code
         try:
-            return self._extract_method_body(code, target)
+            extracted = self._extract_method_body(code, target)
         except ValueError:
             if code.startswith(f"def {target}("):
                 return code
-            return code
+            raise
+        if strategy == "replace_method" and target == "decide":
+            return self._sanitize_decide_code(extracted)
+        return extracted
 
     def _insert_helper_class(self, original: str, new_class_code: str) -> str:
         marker = "\nclass AdaptiveMechanismSchedule:"
@@ -656,9 +804,13 @@ class ScheduleMechanismResearcher(BaseMechanismResearcher):
         return "L2/L3 cadence may not match inner-loop dynamics."
 
     def _build_codegen_task(self, mechanism_name: str, impl_strategy: str, target: str, spec: str) -> str:
-        del spec
+        del spec, mechanism_name
         if impl_strategy == "replace_method":
-            return f"Write a REPLACEMENT for AdaptiveMechanismSchedule.{target}."
+            return (
+                "Write a REPLACEMENT for AdaptiveMechanismSchedule.decide(). "
+                "Output ONLY def decide(self, inner_trace, l2_sessions, completed_outer_cycles, config=None): "
+                "with NO helper classes and NO imports."
+            )
         if impl_strategy == "modify_init":
             return "Write statements to append to AdaptiveMechanismSchedule.__init__ (8-space indent)."
         if impl_strategy == "new_helper_class":
@@ -681,7 +833,14 @@ class ScheduleMechanismResearcher(BaseMechanismResearcher):
             "target": result.target,
             "code_retries": result.code_retries,
             "patch_target": "schedule",
+            "applied": result.applied,
+            "validated": result.validated,
+            "validation_error": result.validation_error,
         }
         (session_dir / "06_summary.json").write_text(
             json.dumps(summary, indent=2), encoding="utf-8"
         )
+
+    def update_session_summary(self, result: ScheduleMechanismResult, session_dir: Path) -> None:
+        """Rewrite 06_summary.json after apply/validate in the controller."""
+        self._save_summary(result, session_dir)

@@ -1,0 +1,6 @@
+{
+  "max_size": 20,
+  "default_tenure": 3,
+  "entries": [],
+  "strategy_entries": []
+}

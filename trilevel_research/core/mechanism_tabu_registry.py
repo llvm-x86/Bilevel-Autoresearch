@@ -70,7 +70,13 @@ class MechanismTabuRegistry:
             session = mechanism_name_or_session
             rnd = round_num if round_num is not None else (session.round or 0)
             self._add_entry(session.mechanism_name, session.target, rnd, reason)
-            if reason in ("import_fail", "harness_syntax_fail", "not_applied"):
+            if reason in (
+                "import_fail",
+                "harness_syntax_fail",
+                "not_applied",
+                "validate_fail",
+                "validate_attr_error",
+            ):
                 self._add_strategy_entry(
                     session.implementation_strategy, rnd, reason,
                 )

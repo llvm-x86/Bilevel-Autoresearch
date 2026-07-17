@@ -216,7 +216,8 @@ class GpuBenchTriLevelController:
 
             fire_l3 = self.enable_level3 and (
                 decision.fire_level3
-                or l2_round % self.mech_config.level3_interval == 0
+                or l2_round % max(1, self.mech_config.level3_interval) == 0
+                or not l2_record.applied
             )
             if fire_l3:
                 l3_round += 1
@@ -236,6 +237,24 @@ class GpuBenchTriLevelController:
 
         shutil.copy2(self.run_runner_py, self.run_dir / "runner_final.py")
         return report
+
+    @staticmethod
+    def _tabu_failure_reason(validation_error: str) -> str:
+        """Map validation_error to tabu registry reason (not always import_fail)."""
+        if not validation_error:
+            return "validate_fail"
+        low = validation_error.lower()
+        if low.startswith("syntax_error"):
+            return "harness_syntax_fail"
+        if "syntax" in low:
+            return "harness_syntax_fail"
+        if "attributeerror" in low or "validate_error: attributeerror" in low:
+            return "validate_attr_error"
+        if "import" in low and "error" in low:
+            return "import_fail"
+        if validation_error.startswith("validate_error:"):
+            return "validate_fail"
+        return validation_error.split(":", 1)[0] if ":" in validation_error else "validate_fail"
 
     def _run_level2(
         self,
@@ -293,7 +312,7 @@ class GpuBenchTriLevelController:
             applied = researcher.apply(self.run_runner_py, result)
             valid = False
             if applied:
-                valid = researcher.validate(self.run_runner_py)
+                valid = researcher.validate(self.run_runner_py, result)
                 if not valid:
                     self._restore_backup(self.run_runner_py, result.session_id)
                     applied = False
@@ -302,9 +321,9 @@ class GpuBenchTriLevelController:
                             result.mechanism_name,
                             result.target,
                             l2_round,
-                            reason="import_fail",
+                            reason=self._tabu_failure_reason(result.validation_error),
                         )
-                    record.error = result.validation_error or "import_fail"
+                    record.error = result.validation_error or "validate_fail"
                 elif self.mech_config.enable_tabu:
                     self.tabu.record_success(
                         result.mechanism_name, result.target, l2_round
@@ -312,6 +331,7 @@ class GpuBenchTriLevelController:
 
             record.applied = applied
             record.validated = valid
+            researcher.update_session_summary(result, session_dir)
             logger.info(
                 "L2 round %d: %s applied=%s",
                 l2_round,
@@ -394,6 +414,14 @@ class GpuBenchTriLevelController:
                 guidance=self.search_config_template.guidance,
             )
         return SearchConfig(inner_budget=self.inner_budget)
+
+    def _validate_runner_module(self, runner_py: Path) -> bool:
+        try:
+            cls = self._load_runner_class(runner_py)
+            return hasattr(cls, "run_iteration")
+        except Exception as exc:
+            logger.warning("Runner validate failed: %s", exc)
+            return False
 
     def _load_runner_class(self, runner_py: Path):
         module = self._load_module_from_path(runner_py, prefix="gpu_tri_runner")

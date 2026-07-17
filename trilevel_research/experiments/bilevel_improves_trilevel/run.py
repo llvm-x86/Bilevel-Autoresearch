@@ -80,12 +80,10 @@ def _make_llm_client(provider: str, model: str) -> LLMClient:
     return LLMClient(provider, api_key, model or pinfo["default_model"])
 
 
-def _l2_apply_rate(sessions: list[dict]) -> float:
-    attempted = [s for s in sessions if not s.get("blocked_by_tabu")]
-    if not attempted:
-        return 0.0
-    applied = sum(1 for s in attempted if s.get("applied"))
-    return applied / len(attempted)
+from trilevel_research.experiments.bilevel_improves_trilevel.compare import (
+    compare_groups,
+    l2_apply_rate,
+)
 
 
 def _run_ouroboros_until_l2_valid(
@@ -148,7 +146,7 @@ def _run_ouroboros_until_l2_valid(
                 "status": "validated",
                 "attempt": attempt,
                 "schedule_path": str(schedule_final),
-                "l2_apply_rate": _l2_apply_rate(sessions),
+                "l2_apply_rate": l2_apply_rate(sessions),
                 "report": report_dict,
             }
 
@@ -303,34 +301,15 @@ def _run_ablation(
     return all_results
 
 
-def _compare_groups(all_results: dict[str, list[dict]], f_l2_apply_rate: float) -> dict:
-    summary: dict = {}
-    for group in ("C", "F"):
-        ok = [r for r in all_results.get(group, []) if r.get("status") == "ok"]
-        imps = [r["improvement"] for r in ok if r.get("improvement") is not None]
-        summary[group] = {
-            "successful": len(ok),
-            "mean_improvement": statistics.mean(imps) if imps else None,
-            "improvements": imps,
-            "l2_apply_rates": [
-                _l2_apply_rate(r.get("level2_sessions", [])) for r in ok
-            ],
-        }
-
-    c_mean = summary.get("C", {}).get("mean_improvement")
-    f_mean = summary.get("F", {}).get("mean_improvement")
-    success = False
-    if c_mean is not None and f_mean is not None:
-        success = f_mean > c_mean + 0.01 and f_l2_apply_rate > 0
-
-    return {
-        "group_summary": summary,
-        "c_mean_improvement": c_mean,
-        "f_mean_improvement": f_mean,
-        "f_l2_apply_rate_ouroboros": f_l2_apply_rate,
-        "success": success,
-        "margin_required": 0.01,
-    }
+def _compare_groups(
+    all_results: dict[str, list[dict]], f_l2_apply_rate: float, margin_pct: float | None = None
+) -> dict:
+    return compare_groups(
+        all_results,
+        ouroboros_l2_apply_rate=f_l2_apply_rate,
+        margin_abs=0.01,
+        margin_pct=margin_pct,
+    )
 
 
 def parse_args() -> argparse.Namespace:
@@ -351,6 +330,7 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=Path(os.environ.get("GPU_BENCH_BIN", str(DEFAULT_BIN))),
     )
+    parser.add_argument("--margin-pct", type=float, default=None)
     parser.add_argument("--skip-existing", action="store_true")
     parser.add_argument("--skip-ouroboros", action="store_true")
     parser.add_argument("--skip-ablation", action="store_true")
@@ -407,6 +387,7 @@ def main() -> None:
             outcome["ablation"] = _compare_groups(
                 ablation_results,
                 f_l2_apply_rate=ouro_result.get("l2_apply_rate", 0.0),
+                margin_pct=args.margin_pct,
             )
 
         outcome["finished_at"] = datetime.now(timezone.utc).isoformat()

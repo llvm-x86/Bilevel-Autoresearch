@@ -108,7 +108,7 @@ class OuroborosScheduleController(GpuBenchTriLevelController):
             applied = researcher.apply(self.run_schedule_py, result)
             valid = False
             if applied:
-                valid = researcher.validate(self.run_schedule_py)
+                valid = researcher.validate(self.run_schedule_py, result)
                 if not valid:
                     self._restore_backup(self.run_schedule_py, result.session_id)
                     applied = False
@@ -117,9 +117,9 @@ class OuroborosScheduleController(GpuBenchTriLevelController):
                             result.mechanism_name,
                             result.target,
                             l2_round,
-                            reason="import_fail",
+                            reason=self._tabu_failure_reason(result.validation_error),
                         )
-                    record.error = result.validation_error or "import_fail"
+                    record.error = result.validation_error or "validate_fail"
                 else:
                     self.schedule = self._reload_schedule(self.run_schedule_py)
                     self.schedule.save(self.run_dir / "schedule_config.json")
@@ -130,6 +130,7 @@ class OuroborosScheduleController(GpuBenchTriLevelController):
 
             record.applied = applied
             record.validated = valid
+            researcher.update_session_summary(result, session_dir)
             logger.info(
                 "L2 round %d (schedule): %s applied=%s validated=%s",
                 l2_round,

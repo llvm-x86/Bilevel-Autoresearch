@@ -1,0 +1,70 @@
+{
+  "started_at": "2026-07-17T18:14:14+00:00",
+  "finished_at": "2026-07-17T19:52:49.312007+00:00",
+  "target_margin_pct": 20.0,
+  "max_iterations": 8,
+  "success": false,
+  "driver_pids": [
+    38608,
+    44049
+  ],
+  "note": "Driver 38608 crashed mid-iteration-2; restarted once as PID 44049 per MANAGER.md; 44049 crashed mid-iteration-3. No iterative_summary written by driver.",
+  "best_margin_pct": 9.26,
+  "best_iteration": 1,
+  "best_run": "driver_38608",
+  "iterations_completed": [
+    {
+      "iteration": 1,
+      "driver_pid": 38608,
+      "c_mean": 5.8232,
+      "f_mean": 6.3625,
+      "margin_pct": 9.26,
+      "ouroboros": "bootstrap"
+    },
+    {
+      "iteration": 1,
+      "driver_pid": 44049,
+      "c_mean": 6.326,
+      "f_mean": 6.3071,
+      "margin_pct": -0.3,
+      "ouroboros": "bootstrap"
+    },
+    {
+      "iteration": 2,
+      "driver_pid": 44049,
+      "c_mean": 6.348,
+      "f_mean": 6.3171,
+      "margin_pct": -0.49,
+      "ouroboros": "bootstrap"
+    }
+  ],
+  "partial_iteration": {
+    "iteration": 3,
+    "driver_pid": 44049,
+    "status": "crashed_during_ablation"
+  },
+  "ouroboros": {
+    "llm_l2_validated": false,
+    "bootstrap_used_every_iteration": true,
+    "attempts_per_iteration": 2
+  },
+  "l3_meta_patches": {
+    "rounds_observed": 2,
+    "apply_success_rate": "1/~15 patches applied (add_l2_failure_logging)",
+    "dominant_failure": "Could not find class GpuBenchMechanismResearcher: in mechanism_research.py"
+  },
+  "group_f_l3_rounds_last_partial": [
+    2,
+    2,
+    2,
+    2,
+    2
+  ],
+  "group_c_l3_rounds": [
+    0,
+    0,
+    0,
+    0,
+    0
+  ]
+}
