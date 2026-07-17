@@ -1,4 +1,3 @@
-# WORKING_COPY: promoted by bilevel_improves_trilevel at 2026-07-17T18:04:26.425663+00:00
 """Adaptive scheduling for Level-2 and Level-3 mechanism research."""
 from __future__ import annotations
 

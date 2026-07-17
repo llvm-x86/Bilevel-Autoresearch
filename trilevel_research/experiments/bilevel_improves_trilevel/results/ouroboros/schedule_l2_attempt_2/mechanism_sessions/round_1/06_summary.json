@@ -1,0 +1,8 @@
+{
+  "session_id": "20260717_130254",
+  "mechanism_name": "schedule_mechanism_20260717_130254",
+  "implementation_strategy": "replace_method",
+  "target": "decide",
+  "code_retries": 0,
+  "patch_target": "schedule"
+}

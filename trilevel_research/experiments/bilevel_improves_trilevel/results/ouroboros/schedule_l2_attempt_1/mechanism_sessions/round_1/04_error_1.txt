@@ -1,0 +1,1 @@
+replace_method must not redefine class ValueCascadeAnalyzer; output only def decide(...)

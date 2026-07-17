@@ -1,0 +1,15 @@
+{
+  "max_size": 20,
+  "default_tenure": 3,
+  "entries": [
+    {
+      "mechanism_name": "schedule_mechanism_20260717_130042",
+      "target": "decide",
+      "reason": "import_fail",
+      "added_at_round": 1,
+      "expires_at_round": 4,
+      "strategy": ""
+    }
+  ],
+  "strategy_entries": []
+}

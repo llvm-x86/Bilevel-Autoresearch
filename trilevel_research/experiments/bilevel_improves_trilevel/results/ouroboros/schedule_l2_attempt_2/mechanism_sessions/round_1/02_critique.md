@@ -1,0 +1,35 @@
+Here is a rigorous critique of each proposed improvement.
+
+---
+
+## Improvement 1: Adaptive Discard-Aware Throttling
+
+1.  **Most likely failure mode**: The most likely failure is **aggressive false suppression of beneficial L2 interventions**. The trace shows a *detrimental* high discard rate (8/12), but the code assumes any streak of 3 discards is bad. In a real search, a string of 3 discards might be a normal cost of exploration that precedes finding a much better region. This throttle could prevent the system from "tunneling through" a transient bad patch to reach a good one. It would also suppress L2 firing right when the search *needs* to escape a local optimum.
+2.  **Implementation trap**: The hardest part is the **window boundary and state management**. The code uses `range(-3, 0)` which assumes `inner_trace[-1]` is the most recent iteration. That is fragile. You must ensure `inner_trace` is indexed correctly relative to the *current* decision point. Also, `recent_streak` should check the *most recent* discards *before* the current decision, not including the current iteration. Off-by-one errors here will either miss the streak or double-count it.
+3.  **Evidence from trace**: **Weak support**. The trace shows a *consecutive* run of discards (iters 7–12 are all discards). This hypothesis correctly identifies the symptom (too many discards) but the trace does *not* prove that *suppressing* L2 would have helped. The code doesn't show what L2 *would* have done differently; it might have changed the LR and broken out of the discard streak. The proposed fix is a blunt instrument for a nuanced problem.
+4.  **Score**: Impact: 4 / Feasibility: 5 / Complexity: 2 → **10.0**
+
+## Improvement 2: Value-Improvement Gate for L3
+
+1.  **Most likely failure mode**: This gate will **delay critical L3 intervention**. The hypothesis assumes L3 should fire *only* when L2 has plateaued. But L3 is supposed to be a *different kind* of search (structure/architectural), not a "backup" for L2 failure. In the trace, the best L2 improvement happened at iteration 6 (val_bpb=0.0245), but the current system fired L3 at iteration 12. If the gate had been in place and L2 improvements hadn't "slowed" by iteration 12, L3 would be suppressed, and the trace shows L3 *did* help (val_bpb=0.0124). The gate would have missed this.
+2.  **Implementation trap**: The **improvement rate calculation is extremely brittle**. `_compute_improvement_rate` divides by `vals[i]`. If `vals[i]` is zero (possible with val_bpb), this code crashes with a `ZeroDivisionError`. More subtly, it assumes improvements are monotonic decreasing val_bpb values. If the best value jumps up and down (which it does in the trace: 6.41 → 0.0245 → 2.44 → 0.08), the `improvements` list will contain negative numbers, leading to a meaningless average rate.
+3.  **Evidence from trace**: **Contradicts the hypothesis**. The trace shows L3 *improved* the best value from 0.08 to 0.0124. Firing L3 was the *right* thing to do, even though L2 had *not* plateaued (the previous L2 iteration improved from 2.44 to 0.08). There is no evidence that waiting for L2 to plateau would have yielded a better result.
+4.  **Score**: Impact: 2 / Feasibility: 3 / Complexity: 3 → **2.0**
+
+## Improvement 3: Mechanism-Success Memory Buffer
+
+1.  **Most likely failure mode**: This memory will **over-constrain the search space and lead to premature convergence**. The trace shows discarded configurations with LR=0.003 and specific BATCH_SIZE ratios. Storing these as "failed" ranges assumes these values are *intrinsically* bad. In reality, the failure might be caused by *interactions* with other parameters (e.g., LR=0.003 is only bad when combined with a specific warmup schedule). Naively hashing these failed ranges will suppress promising configurations that differ slightly in *other* dimensions, or suppress an LR=0.003 that would work well later in training.
+2.  **Implementation trap**: The **distance/similarity metric is unsolvable without domain knowledge**. The proposed `discarded_ranges: dict` is impossible to implement correctly without knowing which parameters are continuous, categorical, or cyclic. For example, if LR=0.003 is bad, should LR=0.0031 also be bad? What about 0.0029? How do you hash "BATCH_SIZE ratio" vs "number of GPUs"? Setting this up requires hardcoding domain-specific bounds, which defeats the purpose of an adaptive scheduler.
+3.  **Evidence from trace**: **Misleading support**. The trace shows *exact* parameter repetition (LR=0.003 appears in multiple discards). However, the trace *does not* show that these repeated parameters were the *cause* of the discards. It is equally plausible that the discards were caused by something else (e.g., data order, random seed) and the L2 scheduler happened to sample LR=0.003 multiple times. The hypothesis over-interprets correlation as causation.
+4.  **Score**: Impact: 3 / Feasibility: 2 / Complexity: 4 → **1.5**
+
+## Improvement 4: Regret-Aware Cooling Schedule
+
+1.  **Most likely failure mode**: **Catastrophic early convergence to a bad optimum**. The cooling schedule uses `random.random()`, which means it is *always* possible to fire, even early. But the inverse dependency on `(worst-best)/worst` is pathologically unsound. If the search finds one good value early (val_bpb=0.0245) but then the next few iterations are all worse (val_bpb=2.44), the "worst" value is 6.41 and the "best" is 0.0245. The regret probability drops from 0.8 to ~0.32 just because one lucky iteration occurred. This would dramatically reduce exploration *right when it is most needed* (after a lucky find, you need to verify it's not a fluke).
+2.  **Implementation trap**: The **definition of "worst" and "best" over the trace is undefined**. The code uses `max(values)` over all kept values. But if you have 1,000 iterations, `max` is the initial terrible value, and `min` is the final good one. The regret ratio will remain nearly 1.0 (meaning high fire probability) for the entire run, making the "cooling" meaningless. This implementation essentially does nothing because the denominator (`worst`) is huge. The correct implementation would need a *rolling* window of max/min, which the author failed to specify.
+3.  **Evidence from trace**: **No support**. The trace is only 12 iterations long, which is far too short to observe any "convergence" or "cooling" behavior. The hypothesis makes a strong claim about a mechanism that requires hundreds of iterations to be meaningful, and the trace provides zero evidence either way.
+4.  **Score**: Impact: 1 / Feasibility: 1 / Complexity: 5 → **0.2**
+
+---
+
+**Selected**: Improvement 1 — It is the only hypothesis that directly addresses the observed failure mode (too many discards) with a simple, feasible, and low-risk clamping mechanism, despite the risk of suppressing beneficial exploration.

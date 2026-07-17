@@ -400,8 +400,11 @@ class GpuBenchTriLevelController:
         return module.GpuBenchRunner
 
     def _load_mechanism_researcher_class(self):
-        module = self._load_module_from_path(self.run_mech_py, prefix="gpu_tri_mech")
-        return module.GpuBenchMechanismResearcher
+        from trilevel_research.domains.gpu_bench_opt.l2_mechanism_research import (
+            TriLevelGpuBenchMechanismResearcher,
+        )
+
+        return TriLevelGpuBenchMechanismResearcher
 
     def _load_module_from_path(self, py_path: Path, prefix: str):
         if str(REPO_ROOT) not in sys.path:

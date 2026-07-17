@@ -198,6 +198,7 @@ class BaseMetaMechanismResearcher(BaseMechanismResearcher, ABC):
             return False
 
         module = importlib.util.module_from_spec(spec)
+        sys.modules[module_name] = module
         try:
             spec.loader.exec_module(module)
             class_name = self._get_researcher_class_name()
@@ -208,6 +209,8 @@ class BaseMetaMechanismResearcher(BaseMechanismResearcher, ABC):
         except Exception as e:
             logger.error(f"[Validate L3] Import failed: {e}")
             return False
+        finally:
+            sys.modules.pop(module_name, None)
 
     # ------------------------------------------------------------------
     # L3 parsing / summarization

@@ -12,11 +12,117 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
-from core.base_mechanism_research import BaseMechanismResearcher
+from core.base_mechanism_research import BaseMechanismResearcher, CODEGEN_SYSTEM, FIX_PROMPT
 
 logger = logging.getLogger(__name__)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+
+# Fixture inner trace for validate() — improving streak after early discards.
+VALIDATE_FIXTURE_TRACE: list[dict] = [
+    {"status": "discard", "val_bpb": 2.0},
+    {"status": "discard", "val_bpb": 1.95},
+    {"status": "keep", "val_bpb": 1.85},
+    {"status": "keep", "val_bpb": 1.80},
+    {"status": "keep", "val_bpb": 1.78},
+]
+
+BOOTSTRAP_MECHANISM_NAME = "bootstrap_improving_streak_defer"
+
+BOOTSTRAP_DECIDE_CODE = textwrap.dedent(
+    '''\
+    def decide(
+        self,
+        inner_trace: list[dict],
+        l2_sessions: list,
+        completed_outer_cycles: int,
+        config=None,
+    ):
+        interval = config.level2_interval if config else self.level2_interval
+        l3_interval = config.level3_interval if config else self.level3_interval
+        batch_size = interval
+        discard_threshold = 0.55
+
+        fire_l2 = True
+        fire_l3 = False
+        reasons: list[str] = []
+
+        recent = inner_trace[-self.lookback_iters :] if inner_trace else []
+        if recent:
+            n = len(recent)
+            discards = sum(1 for r in recent if r.get("status") == "discard")
+            keeps = sum(1 for r in recent if r.get("status") == "keep")
+            discard_rate = discards / n
+
+            keeps_streak = 0
+            for record in reversed(recent):
+                if record.get("status") == "keep":
+                    keeps_streak += 1
+                else:
+                    break
+
+            if discard_rate > discard_threshold:
+                reasons.append(f"high discard rate ({discard_rate:.0%})")
+                fire_l2 = True
+            elif keeps == 0 and n >= 3:
+                reasons.append("zero keeps in lookback window")
+                fire_l2 = True
+            elif keeps_streak >= 2 and completed_outer_cycles % interval != 0:
+                fire_l2 = False
+                reasons.append("improving streak; defer L2")
+            elif completed_outer_cycles % interval != 0 and discard_rate < 0.5:
+                fire_l2 = False
+                reasons.append("inner loop improving; defer L2")
+
+        if completed_outer_cycles % interval == 0:
+            fire_l2 = True
+            if "defer L2" in " ".join(reasons):
+                reasons = [f"fixed interval ({interval} cycles) overrides defer"]
+            elif not reasons:
+                reasons.append(f"fixed L2 interval ({interval} cycles)")
+
+        if l2_sessions:
+            attempted = [s for s in l2_sessions if not getattr(s, "blocked_by_tabu", False)]
+            if attempted:
+                reverts = sum(
+                    1 for s in attempted
+                    if getattr(s, "applied", False) and getattr(s, "validated", None) is False
+                )
+                revert_rate = reverts / len(attempted)
+                if revert_rate >= self.revert_rate_threshold:
+                    fire_l3 = True
+                    reasons.append(f"L2 revert rate {revert_rate:.0%}")
+
+            consecutive_fail = 0
+            for s in reversed(l2_sessions):
+                if getattr(s, "applied", False):
+                    break
+                consecutive_fail += 1
+            if consecutive_fail >= 2:
+                fire_l3 = True
+                reasons.append(f"{consecutive_fail} consecutive L2 failures")
+
+            names = [getattr(s, "mechanism_name", "") for s in l2_sessions[-3:]]
+            if len(names) >= 2 and names[-1] == names[-2]:
+                fire_l3 = True
+                reasons.append("duplicate mechanism name in consecutive rounds")
+
+        l2_rounds = len(l2_sessions)
+        if l2_rounds > 0 and l2_rounds % l3_interval == 0:
+            fire_l3 = True
+            reasons.append(f"L3 interval ({l3_interval} L2 rounds)")
+
+        if not reasons:
+            reasons.append("default schedule")
+
+        return ScheduleDecision(
+            fire_level2=fire_l2,
+            fire_level3=fire_l3,
+            reason="; ".join(reasons),
+            batch_size=batch_size,
+        )
+    '''
+)
 
 EXPLORE_SYSTEM = """You are a meta-researcher specializing in adaptive mechanism scheduling.
 Propose concrete changes to AdaptiveMechanismSchedule.decide() to improve when Level-2
@@ -263,47 +369,159 @@ class ScheduleMechanismResearcher(BaseMechanismResearcher):
         if str(REPO_ROOT) not in sys.path:
             sys.path.insert(0, str(REPO_ROOT))
 
+        module_name = f"_sched_validate_{schedule_path.stat().st_mtime_ns}"
         try:
-            spec = importlib.util.spec_from_file_location(
-                f"_sched_validate_{schedule_path.stat().st_mtime_ns}",
-                schedule_path,
-            )
+            spec = importlib.util.spec_from_file_location(module_name, schedule_path)
             if spec is None or spec.loader is None:
                 return False
             module = importlib.util.module_from_spec(spec)
-            sys.modules[spec.name] = module
+            sys.modules[module_name] = module
             spec.loader.exec_module(module)
             cls = getattr(module, self.TARGET_CLASS, None)
             if cls is None:
                 return False
             instance = cls()
-            decision = instance.decide([], [], completed_outer_cycles=1)
-            return hasattr(decision, "fire_level2") and hasattr(decision, "fire_level3")
+            decision = instance.decide(
+                VALIDATE_FIXTURE_TRACE,
+                [],
+                completed_outer_cycles=3,
+            )
+            schedule_decision = getattr(module, "ScheduleDecision", None)
+            if schedule_decision is not None and not isinstance(decision, schedule_decision):
+                return False
+            return (
+                isinstance(getattr(decision, "fire_level2", None), bool)
+                and isinstance(getattr(decision, "fire_level3", None), bool)
+            )
         except Exception as exc:
             logger.debug("Schedule validate failed: %s", exc)
             return False
+        finally:
+            sys.modules.pop(module_name, None)
+
+    def _extract_method_body(self, code: str, target: str) -> str:
+        """Extract a single method body; reject full-class redefinitions for replace_method."""
+        code = code.strip()
+        if not code:
+            raise ValueError("empty codegen fragment")
+
+        try:
+            tree = ast.parse(code)
+        except SyntaxError as exc:
+            raise ValueError(f"syntax error in codegen: {exc}") from exc
+
+        for node in tree.body:
+            if isinstance(node, ast.ClassDef):
+                if node.name == self.TARGET_CLASS:
+                    for item in node.body:
+                        if isinstance(item, ast.FunctionDef) and item.name == target:
+                            lines = code.splitlines(keepends=True)
+                            extracted = "".join(
+                                lines[item.lineno - 1 : item.end_lineno]
+                            ).rstrip()
+                            return textwrap.dedent(extracted)
+                    raise ValueError(
+                        f"class {self.TARGET_CLASS} redefinition must not be used for replace_method"
+                    )
+                raise ValueError(
+                    f"replace_method must not redefine class {node.name}; output only def {target}(...)"
+                )
+
+        for node in tree.body:
+            if isinstance(node, ast.FunctionDef) and node.name == target:
+                lines = code.splitlines(keepends=True)
+                return "".join(lines[node.lineno - 1 : node.end_lineno]).rstrip()
+
+        match = re.search(rf"(    def {re.escape(target)}\(.*)", code, flags=re.DOTALL)
+        if match:
+            return match.group(1).rstrip()
+
+        raise ValueError(f"could not extract def {target}(...) from codegen fragment")
+
+    def _validate_codegen_schema(self, code: str, strategy: str, target: str) -> str | None:
+        """Return an error string if codegen violates replace_method constraints."""
+        if strategy != "replace_method" or target != "decide":
+            return None
+        try:
+            body = self._extract_method_body(code, target)
+        except ValueError as exc:
+            return str(exc)
+        if "fire_level2" not in body or "fire_level3" not in body:
+            return "decide() must set fire_level2 and fire_level3"
+        if "ScheduleDecision" not in body:
+            return "decide() must return ScheduleDecision(...)"
+        if re.search(rf"class\s+{re.escape(self.TARGET_CLASS)}\b", body):
+            return f"decide fragment must not redefine {self.TARGET_CLASS}"
+        return None
+
+    def _bootstrap_patch_code(self) -> str:
+        return BOOTSTRAP_DECIDE_CODE.strip()
+
+    def _generate_with_retries(
+        self,
+        spec: str,
+        reference_code: str,
+        session_dir: Path,
+        codegen_kwargs: dict,
+    ) -> tuple[str, int]:
+        """Generate code with schema checks; fall back to known-good bootstrap patch."""
+        impl_strategy = codegen_kwargs.get("impl_strategy", "replace_method")
+        _, _, target = self._parse_spec_metadata(spec, "codegen")
+        codegen_prompt = self._get_codegen_prompt(
+            spec=spec,
+            reference_code=reference_code,
+            **codegen_kwargs,
+        )
+        code = self.client.call(
+            codegen_prompt,
+            system=CODEGEN_SYSTEM,
+            max_tokens=6000,
+        )
+        code = self._strip_fences(code)
+
+        for attempt in range(self.max_code_retries):
+            (session_dir / f"04_code_attempt_{attempt + 1}.py").write_text(
+                code, encoding="utf-8"
+            )
+            syntax_error = self._syntax_check(code)
+            schema_error = self._validate_codegen_schema(code, impl_strategy, target)
+            if syntax_error is None and schema_error is None:
+                logger.info("[CodeGen] Code OK on attempt %d", attempt + 1)
+                return code, attempt
+
+            error = syntax_error or schema_error or "unknown error"
+            logger.warning("[CodeGen] Validation failed attempt %d: %s", attempt + 1, error[:200])
+            (session_dir / f"04_error_{attempt + 1}.txt").write_text(error, encoding="utf-8")
+
+            code = self.client.call(
+                FIX_PROMPT.format(error=error[:2000], code=code[:4000]),
+                system=CODEGEN_SYSTEM,
+                max_tokens=6000,
+            )
+            code = self._strip_fences(code)
+
+        bootstrap = self._bootstrap_patch_code()
+        schema_error = self._validate_codegen_schema(bootstrap, impl_strategy, target)
+        if schema_error:
+            raise RuntimeError(f"Bootstrap patch failed schema check: {schema_error}")
+
+        (session_dir / "04_code_bootstrap.py").write_text(bootstrap, encoding="utf-8")
+        logger.warning(
+            "[CodeGen] LLM failed after %d retries; using bootstrap patch",
+            self.max_code_retries,
+        )
+        return bootstrap, self.max_code_retries
 
     def _normalize_codegen(self, code: str, strategy: str, target: str) -> str:
         code = code.strip()
         if strategy != "replace_method":
             return code
-        if code.startswith(f"def {target}("):
-            return code
         try:
-            tree = ast.parse(code)
-        except SyntaxError:
+            return self._extract_method_body(code, target)
+        except ValueError:
+            if code.startswith(f"def {target}("):
+                return code
             return code
-        for node in ast.walk(tree):
-            if not isinstance(node, ast.ClassDef):
-                continue
-            for item in node.body:
-                if isinstance(item, ast.FunctionDef) and item.name == target:
-                    lines = code.splitlines(keepends=True)
-                    return "".join(lines[item.lineno - 1 : item.end_lineno])
-        match = re.search(rf"(    def {re.escape(target)}\(.*)", code, flags=re.DOTALL)
-        if match:
-            return match.group(1).rstrip()
-        return code
 
     def _insert_helper_class(self, original: str, new_class_code: str) -> str:
         marker = "\nclass AdaptiveMechanismSchedule:"
