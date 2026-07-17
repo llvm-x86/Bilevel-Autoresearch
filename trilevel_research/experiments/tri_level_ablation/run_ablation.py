@@ -2,14 +2,13 @@
 
 Usage:
   cd Bilevel-Autoresearch
-  python -m experiments.ablations.tri_level_ablation.run_ablation --group C --repeats 3
-  python -m experiments.ablations.tri_level_ablation.run_ablation --group F --repeats 3
-  python -m experiments.ablations.tri_level_ablation.run_ablation --group all --repeats 3
+  python -m trilevel_research.experiments.tri_level_ablation.run_ablation --group C --repeats 3
+  python -m trilevel_research.experiments.tri_level_ablation.run_ablation --group F --repeats 3
+  python -m trilevel_research.experiments.tri_level_ablation.run_ablation --group all --repeats 3
 """
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 import os
 import shutil
@@ -42,8 +41,10 @@ from experiments.ablations.paper_ablation.run_ablation import (  # noqa: E402
     _teardown_run_logging,
     run_group_c,
 )
-from domains.train_opt.mechanism_research_config import MechanismResearchConfig  # noqa: E402
-from domains.train_opt.tri_level_controller import TriLevelController  # noqa: E402
+from trilevel_research.config import MechanismResearchConfig  # noqa: E402
+from trilevel_research.domains.train_opt.tri_level_controller import (
+    TriLevelController,  # noqa: E402
+)
 
 ABLATION_DIR = Path(__file__).parent
 RESULTS_DIR = ABLATION_DIR / "results"

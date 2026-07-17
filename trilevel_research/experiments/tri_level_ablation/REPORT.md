@@ -59,6 +59,6 @@ schedule, validation harness) against historical L2 session artifacts.
 ## Next steps
 
 ```bash
-python -m experiments.ablations.tri_level_ablation.run_ablation \
+python -m trilevel_research.experiments.tri_level_ablation.run_ablation \
   --group all --repeats 3 --iterations 30 --outer-cycles 6
 ```

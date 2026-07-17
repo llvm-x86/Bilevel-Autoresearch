@@ -2,18 +2,26 @@
 from __future__ import annotations
 
 import json
-import shutil
 import textwrap
 from pathlib import Path
 
-from core.adaptive_mechanism_schedule import AdaptiveMechanismSchedule, MechanismResearchConfig
-from core.base_meta_mechanism_research import BaseMetaMechanismResearcher, MetaMechanismResult
-from core.mechanism_session_trace import MechanismSessionTrace, MechanismSessionTraceBuilder
-from core.mechanism_tabu_registry import MechanismTabuRegistry
-from core.mechanism_validation_harness import MechanismValidationHarness
+from trilevel_research.config import MechanismResearchConfig
+from trilevel_research.core.adaptive_mechanism_schedule import AdaptiveMechanismSchedule
+from trilevel_research.core.base_meta_mechanism_research import (
+    BaseMetaMechanismResearcher,
+    MetaMechanismResult,
+)
+from trilevel_research.core.mechanism_session_trace import (
+    MechanismSessionTrace,
+    MechanismSessionTraceBuilder,
+)
+from trilevel_research.core.mechanism_tabu_registry import MechanismTabuRegistry
+from trilevel_research.core.mechanism_validation_harness import (
+    MechanismValidationHarness,
+)
 
 FIXTURE_ROOT = (
-    Path(__file__).resolve().parent.parent
+    Path(__file__).resolve().parent.parent.parent
     / "experiments/ablations/paper_ablation/run2_results/results_C/C1"
 )
 

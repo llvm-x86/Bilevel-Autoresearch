@@ -2,10 +2,11 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
-from core.mechanism_session_trace import MechanismSessionRecord, MechanismSessionTrace
-from core.mechanism_tabu_registry import MechanismTabuRegistry
+from trilevel_research.core.mechanism_session_trace import (
+    MechanismSessionRecord,
+)
+from trilevel_research.core.mechanism_tabu_registry import MechanismTabuRegistry
 
 
 def _session(name: str, target: str, round: int = 1) -> MechanismSessionRecord:
@@ -90,3 +91,69 @@ class TestMechanismTabuRegistry:
         assert len(reg.entries) == 2
         assert reg.is_tabu("old", "Old", round_num=4)[0] is False
         assert reg.is_tabu("new", "New", round_num=4)[0] is True
+
+    def test_strategy_tabu(self):
+        reg = MechanismTabuRegistry(default_tenure=5)
+        session = _session("x", "X")
+        session.implementation_strategy = "replace_method"
+        reg.record_failure(session, round_num=1, reason="import_fail")
+        other = _session("other", "Other")
+        other.implementation_strategy = "replace_method"
+        blocked, reason = reg.is_tabu(
+            other.mechanism_name, other.target, round_num=2, strategy="replace_method"
+        )
+        assert blocked is True
+        assert "strategy tabu" in reason
+
+    def test_target_tabu(self):
+        reg = MechanismTabuRegistry()
+        reg.record_failure("foo", "SharedTarget", round_num=1, reason="fail")
+        blocked, reason = reg.is_tabu("bar", "SharedTarget", round_num=2)
+        assert blocked is True
+        assert "target tabu" in reason
+
+    def test_similar_mechanism_tabu(self):
+        reg = MechanismTabuRegistry()
+        reg.record_failure("tabu_search_manager_v2", "T", round_num=1, reason="fail")
+        blocked, _ = reg.is_tabu("search", "Other", round_num=2)
+        assert blocked is True
+
+    def test_generated_helper_class_tabu(self):
+        reg = MechanismTabuRegistry()
+        reg.record_failure("old", "GeneratedMechanism_abc", round_num=1, reason="fail")
+        blocked, reason = reg.is_tabu("new", "GeneratedMechanism_xyz", round_num=2)
+        assert blocked is True
+        assert "generated helper" in reason
+
+    def test_record_failure_with_string_args(self):
+        reg = MechanismTabuRegistry()
+        reg.record_failure("m", "T", round_num=1, reason="fail")
+        assert reg.is_tabu("m", "T", round_num=2)[0] is True
+
+    def test_record_success_with_string_args(self):
+        reg = MechanismTabuRegistry(default_tenure=2)
+        reg.record_success("m", "T", round_num=1)
+        assert reg.is_tabu("m", "T", round_num=2)[0] is True
+
+    def test_empty_registry_prompt_block(self):
+        reg = MechanismTabuRegistry()
+        assert "none" in reg.to_prompt_block().lower()
+
+    def test_stats(self):
+        reg = MechanismTabuRegistry(max_size=10)
+        reg.record_failure("a", "A", round_num=1)
+        assert reg.stats() == {"size": 1, "max_size": 10}
+
+    def test_strategy_entry_not_added_for_generic_failure(self):
+        reg = MechanismTabuRegistry()
+        session = _session("m", "T")
+        session.implementation_strategy = "new_helper_class"
+        reg.record_failure(session, round_num=1, reason="generic_fail")
+        assert reg.strategy_entries == []
+
+    def test_empty_strategy_skips_strategy_entry(self):
+        reg = MechanismTabuRegistry()
+        session = _session("m", "T")
+        session.implementation_strategy = ""
+        reg.record_failure(session, round_num=1, reason="import_fail")
+        assert reg.strategy_entries == []

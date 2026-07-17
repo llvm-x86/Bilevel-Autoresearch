@@ -83,6 +83,15 @@ class TabuSearchManager:
 
 Full ablation report: [`experiments/ablations/paper_ablation/run2_results/REPORT.md`](experiments/ablations/paper_ablation/run2_results/REPORT.md)
 
+### Optional: Tri-Level Autoresearch (Level 3)
+
+Experimental extension adding Level-3 meta-mechanism research (tabu registry,
+adaptive L2/L3 schedule, validation harness). **Not required for bilevel use.**
+
+📄 **[Read the report first → trilevel_research/REPORT.md](trilevel_research/REPORT.md)**
+
+Install: `pip install -e ".[trilevel]"` · Usage: [trilevel_research/README.md](trilevel_research/README.md)
+
 ---
 
 ## Quick Start

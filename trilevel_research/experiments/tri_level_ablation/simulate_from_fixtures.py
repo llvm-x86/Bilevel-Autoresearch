@@ -5,8 +5,8 @@ whether Level 3 policies (tabu registry, adaptive schedule, validation harness)
 would have improved L2 efficiency.
 
 Usage:
-  python -m experiments.ablations.tri_level_ablation.simulate_from_fixtures
-  python -m experiments.ablations.tri_level_ablation.simulate_from_fixtures --write-report
+  python -m trilevel_research.experiments.tri_level_ablation.simulate_from_fixtures
+  python -m trilevel_research.experiments.tri_level_ablation.simulate_from_fixtures --write-report
 """
 from __future__ import annotations
 
@@ -27,14 +27,16 @@ import sys
 
 sys.path.insert(0, str(REPO_ROOT))
 
-from core.adaptive_mechanism_schedule import AdaptiveMechanismSchedule
-from core.mechanism_session_trace import (
+from trilevel_research.config import MechanismResearchConfig
+from trilevel_research.core.adaptive_mechanism_schedule import AdaptiveMechanismSchedule
+from trilevel_research.core.mechanism_session_trace import (
     MechanismSessionRecord,
     MechanismSessionTraceBuilder,
 )
-from core.mechanism_tabu_registry import MechanismTabuRegistry
-from core.mechanism_validation_harness import MechanismValidationHarness
-from domains.train_opt.mechanism_research_config import MechanismResearchConfig
+from trilevel_research.core.mechanism_tabu_registry import MechanismTabuRegistry
+from trilevel_research.core.mechanism_validation_harness import (
+    MechanismValidationHarness,
+)
 
 
 @dataclass
@@ -399,7 +401,7 @@ def write_report(summary: dict, path: Path) -> None:
             "## Next steps",
             "",
             "```bash",
-            "python -m experiments.ablations.tri_level_ablation.run_ablation \\",
+            "python -m trilevel_research.experiments.tri_level_ablation.run_ablation \\",
             "  --group all --repeats 3 --iterations 30 --outer-cycles 6",
             "```",
         ]

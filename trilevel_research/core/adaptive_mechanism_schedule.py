@@ -2,15 +2,14 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
-from core.mechanism_session_trace import MechanismSessionRecord
-from domains.train_opt.mechanism_research_config import MechanismResearchConfig
+from trilevel_research.config import MechanismResearchConfig
+from trilevel_research.core.mechanism_session_trace import MechanismSessionRecord
 
 __all__ = [
     "AdaptiveMechanismSchedule",
-    "MechanismResearchConfig",
     "ScheduleDecision",
 ]
 

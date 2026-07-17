@@ -4,9 +4,6 @@ Usage:
   # Full bilevel experiment (Level 1 + Level 1.5):
   python -m domains.train_opt.cli bilevel --inner-budget 5 --outer-cycles 3
 
-  # Tri-level experiment (Level 1 + 1.5 + 2 + 3):
-  python -m domains.train_opt.cli trilevel --inner-budget 5 --outer-cycles 6 --enable-level3
-
   # Inner loop only (Level 1, like Karpathy's autoresearch):
   python -m domains.train_opt.cli inner --iterations 10
 """
@@ -36,10 +33,8 @@ if _env_path.exists():
 from core.llm_client import LLMClient
 
 from .config import SearchConfig
-from .mechanism_research_config import MechanismResearchConfig
 from .outer import TrainOuterLoop
 from .runner import TrainRunner
-from .tri_level_controller import TriLevelController
 
 logging.basicConfig(
     level=logging.INFO,
@@ -111,58 +106,6 @@ def cmd_inner(args):
         print(f"  {r.iteration:3d}: {r.val_bpb:.6f} [{r.status:7s}] {r.description[:50]}")
 
 
-def cmd_trilevel(args):
-    """Tri-level experiment (Level 1 + 1.5 + 2 + optional 3)."""
-    client = get_llm_client(args.provider, args.model)
-
-    train_py = AUTORESEARCH_DIR / "train.py"
-    if not train_py.exists():
-        sys.exit(f"ERROR: train.py not found at {train_py}")
-
-    mech_config = MechanismResearchConfig(
-        level2_interval=args.level2_interval,
-        level3_interval=args.level3_interval,
-        enable_level3=args.enable_level3,
-        enable_tabu=not args.no_tabu,
-        enable_adaptive_schedule=not args.fixed_schedule,
-    )
-
-    artifacts_base = PROJECT_ROOT / "artifacts" / "train_opt" / "trilevel"
-    run_dir = artifacts_base / f"run_{args.outer_cycles}c_{args.inner_budget}i"
-
-    controller = TriLevelController(
-        run_dir=run_dir,
-        train_py=train_py,
-        work_dir=AUTORESEARCH_DIR,
-        llm_client=client,
-        inner_budget=args.inner_budget,
-        outer_cycles=args.outer_cycles,
-        time_budget=args.time_budget,
-        enable_level3=args.enable_level3,
-        mech_config=mech_config,
-    )
-
-    report = controller.run()
-    report_dict = report.to_dict()
-
-    print("\n" + "=" * 60)
-    print(f"TRI-LEVEL EXPERIMENT COMPLETE (group {report.group})")
-    print("=" * 60)
-    print(f"Baseline:      {report_dict.get('baseline_bpb')}")
-    best = report_dict.get("best_val_bpb")
-    print(f"Best:          {best:.6f} (iter {report_dict.get('best_iteration')})" if best != float('inf') else "Best:          (none)")
-    imp = report_dict.get("improvement")
-    print(f"Improvement:   {imp:.6f}" if imp is not None else "Improvement:   N/A")
-    print(f"Total iters:   {report_dict['total_iterations']}")
-    print(f"Outer cycles:  {report_dict['outer_cycles']}")
-    print(f"L2 rounds:     {report_dict['level2_rounds']}")
-    print(f"L3 rounds:     {report_dict['level3_rounds']}")
-
-    report_path = run_dir / "report.json"
-    report_path.write_text(json.dumps(report_dict, indent=2, ensure_ascii=False), encoding="utf-8")
-    print(f"\nReport saved to: {report_path}")
-
-
 def cmd_bilevel(args):
     """Full bilevel experiment (Level 1 + Level 1.5)."""
     inner_client = get_llm_client(args.provider, args.model)
@@ -232,22 +175,11 @@ def main():
     p_bilevel.add_argument("--inner-budget", type=int, default=5, help="Inner iterations per outer cycle")
     p_bilevel.add_argument("--outer-cycles", type=int, default=3, help="Number of outer cycles")
 
-    p_tri = sub.add_parser("trilevel", help="Tri-level experiment (L1 + L1.5 + L2 + L3)")
-    p_tri.add_argument("--inner-budget", type=int, default=5, help="Inner iterations per outer cycle")
-    p_tri.add_argument("--outer-cycles", type=int, default=6, help="Number of outer cycles")
-    p_tri.add_argument("--level2-interval", type=int, default=2, help="Outer cycles per L2 batch")
-    p_tri.add_argument("--level3-interval", type=int, default=2, help="Fire L3 every N L2 rounds")
-    p_tri.add_argument("--enable-level3", action="store_true", help="Enable Level-3 meta-mechanism research")
-    p_tri.add_argument("--no-tabu", action="store_true", help="Disable mechanism tabu registry")
-    p_tri.add_argument("--fixed-schedule", action="store_true", help="Use fixed L2 interval only")
-
     args = parser.parse_args()
     if args.cmd == "inner":
         cmd_inner(args)
     elif args.cmd == "bilevel":
         cmd_bilevel(args)
-    elif args.cmd == "trilevel":
-        cmd_trilevel(args)
     else:
         parser.print_help()
 

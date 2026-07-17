@@ -40,6 +40,7 @@ class MetaMechanismResult:
     applied: bool = False
     validated: bool = False
     validation_error: str = ""
+    schedule_patch: dict | None = None
     session_dir: Path = field(default_factory=lambda: Path("."))
 
 

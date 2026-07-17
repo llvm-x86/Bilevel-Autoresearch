@@ -4,7 +4,8 @@ from __future__ import annotations
 import json
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from core.mechanism_session_trace import MechanismSessionRecord
+
+from trilevel_research.core.mechanism_session_trace import MechanismSessionRecord
 
 
 @dataclass

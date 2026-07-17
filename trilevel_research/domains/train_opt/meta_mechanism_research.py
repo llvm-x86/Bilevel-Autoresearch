@@ -6,7 +6,9 @@ from __future__ import annotations
 
 import re
 
-from core.base_meta_mechanism_research import BaseMetaMechanismResearcher
+from trilevel_research.core.base_meta_mechanism_research import (
+    BaseMetaMechanismResearcher,
+)
 
 EXPLORE_SYSTEM = """You are a meta-meta-researcher optimizing how an AI system discovers
 new hyperparameter search mechanisms. Your job is to improve mechanism_research.py —

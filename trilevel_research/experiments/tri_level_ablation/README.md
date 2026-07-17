@@ -1,4 +1,4 @@
-# Tri-Level Ablation
+# Tri-Level Ablation (CPU simulation + live driver)
 
 Compares **Group C** (L1 + L1.5 + L2) against **Group F** (L1 + L1.5 + L2 + L3).
 
@@ -7,6 +7,8 @@ Level 3 meta-optimizes Level 2's `mechanism_research.py` process using:
 - **Mechanism tabu registry** — blocks repeated failed L2 proposals
 - **Adaptive scheduling** — decides when to fire L2/L3 based on inner trace
 - **Validation harness** — import-checks L3 patches before activation
+
+**Primary results:** [../../REPORT.md](../../REPORT.md) · CPU detail: [REPORT.md](./REPORT.md)
 
 ## Groups
 
@@ -27,29 +29,32 @@ Shared settings (match paper ablation):
 
 ```bash
 cd Bilevel-Autoresearch
-pip install -e .
+pip install -e ".[trilevel]"
 
 export AUTORESEARCH_DIR="$HOME/karpathy_autoresearch"
 
-# Group C only (3 repeats)
-python -m experiments.ablations.tri_level_ablation.run_ablation \
+# CPU counterfactual from paper Group C fixtures (no GPU/API)
+python -m trilevel_research.experiments.tri_level_ablation.simulate_from_fixtures --write-report
+
+# Group C only (3 repeats) — live, needs GPU + API
+python -m trilevel_research.experiments.tri_level_ablation.run_ablation \
   --group C --repeats 3 --iterations 30 --outer-cycles 6
 
 # Group F only (tri-level)
-python -m experiments.ablations.tri_level_ablation.run_ablation \
+python -m trilevel_research.experiments.tri_level_ablation.run_ablation \
   --group F --repeats 3 --iterations 30 --outer-cycles 6
 
 # Both groups
-python -m experiments.ablations.tri_level_ablation.run_ablation --group all --repeats 3
+python -m trilevel_research.experiments.tri_level_ablation.run_ablation --group all --repeats 3
 
 # CLI tri-level sanity run
-python -m domains.train_opt.cli trilevel \
+python -m trilevel_research train trilevel \
   --inner-budget 5 --outer-cycles 4 --enable-level3
 ```
 
 ## Results
 
-Reports are written to `experiments/ablations/tri_level_ablation/results/{C|F}{repeat}/report.json`.
+Reports are written to `trilevel_research/experiments/tri_level_ablation/results/{C|F}{repeat}/report.json`.
 
 Each run directory contains:
 
@@ -58,6 +63,8 @@ Each run directory contains:
 - `mechanism_sessions/round_N/` — L2 session artifacts
 - `meta_mechanism_sessions/round_M/` — L3 session artifacts (Group F)
 - `mechanism_tabu.json` — tabu registry state
+
+Simulation output: `trilevel_research/experiments/tri_level_ablation/simulation_results/simulation_summary.json`
 
 ## Metrics
 
@@ -81,9 +88,9 @@ Each run directory contains:
 
 ```bash
 python -c "
-from domains.train_opt.tri_level_controller import TriLevelController
-from domains.train_opt.meta_mechanism_research import TrainMetaMechanismResearcher
-from core.mechanism_tabu_registry import MechanismTabuRegistry
+from trilevel_research.domains.train_opt.tri_level_controller import TriLevelController
+from trilevel_research.domains.train_opt.meta_mechanism_research import TrainMetaMechanismResearcher
+from trilevel_research.core.mechanism_tabu_registry import MechanismTabuRegistry
 print('OK')
 "
 ```

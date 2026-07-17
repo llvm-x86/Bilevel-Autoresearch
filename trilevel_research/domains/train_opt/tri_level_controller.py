@@ -5,7 +5,6 @@ Extracted from paper ablation Group C/F logic into a reusable driver.
 from __future__ import annotations
 
 import importlib.util
-import json
 import logging
 import shutil
 import sys
@@ -13,20 +12,24 @@ import traceback as tb
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from core.adaptive_mechanism_schedule import AdaptiveMechanismSchedule
-from core.mechanism_session_trace import MechanismSessionRecord, MechanismSessionTraceBuilder
-from core.mechanism_tabu_registry import MechanismTabuRegistry
-from core.mechanism_validation_harness import MechanismValidationHarness
 from core.llm_client import LLMClient
-
-from .config import SearchConfig
-from .mechanism_research_config import MechanismResearchConfig
-from .outer import TrainOuterLoop
-from .runner import TrainRunner
+from domains.train_opt.config import SearchConfig
+from domains.train_opt.outer import TrainOuterLoop
+from domains.train_opt.runner import TrainRunner
+from trilevel_research.config import MechanismResearchConfig
+from trilevel_research.core.adaptive_mechanism_schedule import AdaptiveMechanismSchedule
+from trilevel_research.core.mechanism_session_trace import (
+    MechanismSessionRecord,
+    MechanismSessionTraceBuilder,
+)
+from trilevel_research.core.mechanism_tabu_registry import MechanismTabuRegistry
+from trilevel_research.core.mechanism_validation_harness import (
+    MechanismValidationHarness,
+)
 
 logger = logging.getLogger(__name__)
 
-REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
 
 @dataclass
@@ -233,15 +236,15 @@ class TriLevelController:
         l2_round: int,
         batch_size: int,
     ) -> MechanismSessionRecord:
-        TrainMechanismResearcher = self._load_mechanism_researcher_class()
-        researcher = TrainMechanismResearcher(
+        ResearcherClass = self._load_mechanism_researcher_class()
+        tabu = self.tabu if self.mech_config.enable_tabu else None
+        researcher = ResearcherClass(
             model=self.client._model,
             api_key=self.client._api_key,
             provider=getattr(self.client, "_provider", "deepseek"),
             max_code_retries=self.mech_config.max_code_retries,
+            tabu_registry=tabu,
         )
-        if self.mech_config.enable_tabu:
-            researcher.tabu_registry = self.tabu
 
         session_dir = self.mech_sessions_dir / f"round_{l2_round}"
         session_dir.mkdir(parents=True, exist_ok=True)
@@ -396,8 +399,15 @@ class TriLevelController:
         return module.TrainRunner
 
     def _load_mechanism_researcher_class(self):
+        from trilevel_research.domains.train_opt.l2_mechanism_research import (
+            TriLevelTrainMechanismResearcher,
+        )
+
         module = self._load_module_from_path(self.run_mech_py, prefix="tri_mech")
-        return module.TrainMechanismResearcher
+        loaded = getattr(module, "TrainMechanismResearcher", None)
+        if loaded is not None and loaded.__name__ == "TrainMechanismResearcher":
+            return TriLevelTrainMechanismResearcher
+        return loaded or TriLevelTrainMechanismResearcher
 
     def _load_module_from_path(self, py_path: Path, prefix: str):
         if str(REPO_ROOT) not in sys.path:

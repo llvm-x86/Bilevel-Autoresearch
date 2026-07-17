@@ -6,7 +6,6 @@ import sys
 import tempfile
 from pathlib import Path
 from typing import Any, Callable
-from unittest.mock import MagicMock
 
 
 class MockLLMClient:
@@ -78,6 +77,8 @@ class MechanismValidationHarness:
             return hasattr(module, "TrainMechanismResearcher")
         if domain == "article_opt":
             return hasattr(module, "MechanismResearcher")
+        if domain == "gpu_bench_opt":
+            return hasattr(module, "GpuBenchMechanismResearcher")
         return True
 
     def validate_dry_run(
@@ -194,7 +195,7 @@ class MechanismValidationHarness:
         tabu_check: Callable[[str, str, int], tuple[bool, str]],
         fixture_sessions: list[Path],
     ) -> dict[str, Any]:
-        from core.mechanism_session_trace import parse_session_dir
+        from trilevel_research.core.mechanism_session_trace import parse_session_dir
 
         blocked = 0
         parsed = 0
