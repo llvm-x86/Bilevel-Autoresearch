@@ -240,6 +240,7 @@ class TrainMechanismResearcher(BaseMechanismResearcher):
             max_code_retries=max_code_retries,
         )
         self._runner_path = Path(__file__).parent / "runner.py"
+        self.tabu_registry = None  # optional MechanismTabuRegistry, wired by TriLevelController
 
     # ------------------------------------------------------------------
     # Abstract method implementations (BaseMechanismResearcher interface)
@@ -323,13 +324,19 @@ class TrainMechanismResearcher(BaseMechanismResearcher):
 
         # --- Round 1: Explore ---
         logger.info(f"[TrainMechResearch {session_id}] Round 1: Exploration")
+        explore_prompt = EXPLORE_PROMPT.format(
+            n_iters=n_iters,
+            trace_summary=trace_summary,
+            runner_summary=runner_summary,
+            bottleneck=bottleneck,
+        )
+        if self.tabu_registry is not None:
+            explore_prompt += (
+                "\n\n## Forbidden mechanisms (tabu registry)\n"
+                + self.tabu_registry.to_prompt_block()
+            )
         exploration = self.client.call(
-            EXPLORE_PROMPT.format(
-                n_iters=n_iters,
-                trace_summary=trace_summary,
-                runner_summary=runner_summary,
-                bottleneck=bottleneck,
-            ),
+            explore_prompt,
             system=EXPLORE_SYSTEM,
             max_tokens=4000,
         )

@@ -1,0 +1,135 @@
+{
+  "fixture_source": "/home/a112/Bilevel-Autoresearch/experiments/ablations/paper_ablation/run2_results/results_C",
+  "repeats": [
+    "C1",
+    "C2",
+    "C3"
+  ],
+  "group_C_actual": {
+    "mean_delta_val_bpb": 0.044786333333333296,
+    "std_delta_val_bpb": 0.029565150301213247,
+    "l2_apply_rate": 0.8333333333333334,
+    "l2_revert_rate": 1.0,
+    "l2_validated_rate": 0.0
+  },
+  "group_F_simulated_policies": {
+    "l2_apply_rate": 0.3333333333333333,
+    "l2_revert_rate": 0.6666666666666666,
+    "l2_validated_rate": 0.0,
+    "tabu_blocks_total": 3,
+    "harness_blocks_total": 0,
+    "l3_fire_decisions": 5
+  },
+  "per_repeat": [
+    {
+      "repeat": "C1",
+      "delta_val_bpb": 0.06544799999999995,
+      "C_l2_metrics": {
+        "attempted": 2,
+        "apply_rate": 1.0,
+        "revert_rate": 1.0,
+        "validated_rate": 0.0,
+        "blocked_rate": 0.0
+      },
+      "F_l2_metrics": {
+        "attempted": 2,
+        "apply_rate": 0.5,
+        "revert_rate": 1.0,
+        "validated_rate": 0.0,
+        "blocked_rate": 0.5
+      },
+      "tabu_blocks": 1,
+      "harness_blocks": 0,
+      "l3_fires": 2,
+      "schedule": [
+        {
+          "l2_round": 1,
+          "fire_level2": true,
+          "fire_level3": true,
+          "reason": "fixed L2 interval (2 cycles); L2 revert rate 100%"
+        },
+        {
+          "l2_round": 2,
+          "fire_level2": true,
+          "fire_level3": true,
+          "reason": "fixed L2 interval (2 cycles); L2 revert rate 100%; L3 interval (2 L2 rounds)"
+        }
+      ]
+    },
+    {
+      "repeat": "C2",
+      "delta_val_bpb": 0.01092000000000004,
+      "C_l2_metrics": {
+        "attempted": 2,
+        "apply_rate": 1.0,
+        "revert_rate": 1.0,
+        "validated_rate": 0.0,
+        "blocked_rate": 0.0
+      },
+      "F_l2_metrics": {
+        "attempted": 2,
+        "apply_rate": 0.5,
+        "revert_rate": 1.0,
+        "validated_rate": 0.0,
+        "blocked_rate": 0.5
+      },
+      "tabu_blocks": 1,
+      "harness_blocks": 0,
+      "l3_fires": 2,
+      "schedule": [
+        {
+          "l2_round": 1,
+          "fire_level2": true,
+          "fire_level3": true,
+          "reason": "fixed L2 interval (2 cycles); L2 revert rate 100%"
+        },
+        {
+          "l2_round": 2,
+          "fire_level2": true,
+          "fire_level3": true,
+          "reason": "fixed L2 interval (2 cycles); L2 revert rate 100%; L3 interval (2 L2 rounds)"
+        }
+      ]
+    },
+    {
+      "repeat": "C3",
+      "delta_val_bpb": 0.057990999999999904,
+      "C_l2_metrics": {
+        "attempted": 2,
+        "apply_rate": 0.5,
+        "revert_rate": 1.0,
+        "validated_rate": 0.0,
+        "blocked_rate": 0.0
+      },
+      "F_l2_metrics": {
+        "attempted": 2,
+        "apply_rate": 0.0,
+        "revert_rate": 0.0,
+        "validated_rate": 0.0,
+        "blocked_rate": 0.5
+      },
+      "tabu_blocks": 1,
+      "harness_blocks": 0,
+      "l3_fires": 1,
+      "schedule": [
+        {
+          "l2_round": 1,
+          "fire_level2": true,
+          "fire_level3": false,
+          "reason": "fixed L2 interval (2 cycles)"
+        },
+        {
+          "l2_round": 2,
+          "fire_level2": true,
+          "fire_level3": true,
+          "reason": "fixed L2 interval (2 cycles); L2 revert rate 50%; L3 interval (2 L2 rounds)"
+        }
+      ]
+    }
+  ],
+  "counterfactual_estimate": {
+    "revert_rate_reduction": 0.33333333333333337,
+    "estimated_task_gain_from_l3": 0.006666666666666668,
+    "note": "Conservative heuristic: each avoided L2 revert saves ~1 wasted outer batch; 0.02 val_bpb per revert based on C1 batch-3 breakthrough pattern."
+  }
+}
