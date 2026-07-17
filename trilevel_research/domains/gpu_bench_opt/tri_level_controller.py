@@ -6,6 +6,7 @@ import logging
 import shutil
 import sys
 import traceback as tb
+import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -113,7 +114,9 @@ class GpuBenchTriLevelController:
         self.mech_sessions_dir = self.run_dir / "mechanism_sessions"
         self.meta_sessions_dir = self.run_dir / "meta_mechanism_sessions"
 
-        self.tabu = MechanismTabuRegistry.load(self.run_dir / "mechanism_tabu.json")
+        self.tabu = MechanismTabuRegistry.load(
+            self.run_dir / "mechanism_tabu.json", run_token=uuid.uuid4().hex
+        )
         self.schedule = AdaptiveMechanismSchedule.load(self.run_dir / "schedule_config.json")
         self.harness = MechanismValidationHarness(
             domain="gpu_bench_opt", project_root=REPO_ROOT

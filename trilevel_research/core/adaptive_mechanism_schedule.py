@@ -6,9 +6,6 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-from trilevel_research.config import MechanismResearchConfig
-from trilevel_research.core.mechanism_session_trace import MechanismSessionRecord
-
 __all__ = [
     "AdaptiveMechanismSchedule",
     "ScheduleDecision",
@@ -50,6 +47,7 @@ class AdaptiveMechanismSchedule:
         reasons: list[str] = []
 
         recent = inner_trace[-self.lookback_iters :] if inner_trace else []
+        recent = [r for r in recent if isinstance(r, dict)]
         if recent:
             n = len(recent)
             discards = sum(1 for r in recent if r.get("status") == "discard")

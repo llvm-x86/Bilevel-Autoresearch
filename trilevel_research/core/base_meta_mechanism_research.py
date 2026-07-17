@@ -285,13 +285,17 @@ class BaseMetaMechanismResearcher(BaseMechanismResearcher, ABC):
     # ------------------------------------------------------------------
 
     def _insert_helper_class(self, original: str, new_class_code: str, anchor_class: str) -> str:
-        marker = f"\nclass {anchor_class}:"
-        idx = original.find(marker)
-        if idx == -1:
-            marker = f"class {anchor_class}:"
+        for marker in (f"\nclass {anchor_class}:", f"\nclass {anchor_class}("):
             idx = original.find(marker)
-        if idx == -1:
-            raise ValueError(f"Could not find 'class {anchor_class}:' in mechanism_research.py")
+            if idx != -1:
+                break
+        else:
+            for marker in (f"class {anchor_class}:", f"class {anchor_class}("):
+                idx = original.find(marker)
+                if idx != -1:
+                    break
+            else:
+                raise ValueError(f"Could not find 'class {anchor_class}' in mechanism_research.py")
 
         separator = "\n\n\n# ---------------------------------------------------------------------------\n"
         insert_block = f"{separator}{new_class_code.strip()}\n\n\n"

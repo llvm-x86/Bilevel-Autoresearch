@@ -386,7 +386,11 @@ class ScheduleMechanismResearcher(BaseMechanismResearcher):
         backup_path.write_text(original, encoding="utf-8")
 
         strategy = result.implementation_strategy
-        code = self._normalize_codegen(result.code.strip(), strategy, result.target)
+        try:
+            code = self._normalize_codegen(result.code.strip(), strategy, result.target)
+        except Exception as exc:
+            result.validation_error = f"patch_apply_error: {exc}"
+            return False
         try:
             if strategy == "new_helper_class":
                 patched = self._insert_helper_class(original, code)

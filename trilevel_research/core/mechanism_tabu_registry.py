@@ -24,6 +24,10 @@ class MechanismTabuRegistry:
     default_tenure: int = 3
     entries: list[MechanismTabuEntry] = field(default_factory=list)
     strategy_entries: list[MechanismTabuEntry] = field(default_factory=list)
+    # Entries are only valid within one run: rounds restart at 1 each run, so
+    # round-based expiry from a previous run's persisted file would otherwise
+    # poison every fresh run reusing the same run_dir.
+    run_token: str = ""
 
     def is_tabu(
         self,
@@ -120,17 +124,23 @@ class MechanismTabuRegistry:
         payload = {
             "max_size": self.max_size,
             "default_tenure": self.default_tenure,
+            "run_token": self.run_token,
             "entries": [asdict(e) for e in self.entries],
             "strategy_entries": [asdict(e) for e in self.strategy_entries],
         }
         path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
 
     @classmethod
-    def load(cls, path: Path) -> MechanismTabuRegistry:
+    def load(cls, path: Path, run_token: str = "") -> MechanismTabuRegistry:
         path = Path(path)
         if not path.exists():
-            return cls()
+            return cls(run_token=run_token)
         data = json.loads(path.read_text(encoding="utf-8"))
+        stored_token = str(data.get("run_token", ""))
+        if run_token and stored_token != run_token:
+            # Stale registry from a different run — start empty rather than
+            # inherit round-based entries that can never expire correctly.
+            return cls(run_token=run_token)
         entries = [MechanismTabuEntry(**e) for e in data.get("entries", [])]
         strategy_entries = [
             MechanismTabuEntry(**e) for e in data.get("strategy_entries", [])
@@ -140,6 +150,7 @@ class MechanismTabuRegistry:
             default_tenure=int(data.get("default_tenure", 3)),
             entries=entries,
             strategy_entries=strategy_entries,
+            run_token=stored_token,
         )
 
     def stats(self) -> dict:
