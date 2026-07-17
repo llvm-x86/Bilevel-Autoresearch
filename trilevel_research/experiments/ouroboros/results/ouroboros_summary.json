@@ -1,0 +1,64 @@
+{
+  "schedule_l2": {
+    "runs": 1,
+    "mean_apply_rate": 0.0,
+    "mean_validate_rate": 0.0,
+    "mini_f_decisions": [
+      {
+        "cycle": 1,
+        "fire_level2": true,
+        "fire_level3": false,
+        "reason": "high discard rate (80%)"
+      },
+      {
+        "cycle": 2,
+        "fire_level2": true,
+        "fire_level3": false,
+        "reason": "high discard rate (80%)"
+      },
+      {
+        "cycle": 3,
+        "fire_level2": true,
+        "fire_level3": false,
+        "reason": "high discard rate (80%)"
+      },
+      {
+        "cycle": 4,
+        "fire_level2": true,
+        "fire_level3": false,
+        "reason": "high discard rate (80%)"
+      }
+    ]
+  },
+  "l1_only": {
+    "runs": 1,
+    "mean_apply_rate": 0.0,
+    "mean_validate_rate": 0.0,
+    "mini_f_decisions": [
+      {
+        "cycle": 1,
+        "fire_level2": true,
+        "fire_level3": false,
+        "reason": "high discard rate (80%)"
+      },
+      {
+        "cycle": 2,
+        "fire_level2": true,
+        "fire_level3": false,
+        "reason": "high discard rate (80%)"
+      },
+      {
+        "cycle": 3,
+        "fire_level2": true,
+        "fire_level3": false,
+        "reason": "high discard rate (80%)"
+      },
+      {
+        "cycle": 4,
+        "fire_level2": true,
+        "fire_level3": false,
+        "reason": "high discard rate (80%)"
+      }
+    ]
+  }
+}
