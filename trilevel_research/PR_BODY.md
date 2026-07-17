@@ -56,7 +56,7 @@ Self-contained directory. Delete per [UNINSTALL.md](trilevel_research/UNINSTALL.
 
 ### Test plan
 
-Required items pass; optional gpu smoke skipped/blocked (no `GPU_BENCH_BIN` locally; ASUS blocked on `DEEPSEEK_API_KEY`).
+Required items pass; optional gpu smoke skipped locally (no `GPU_BENCH_BIN`); **PASS on ASUS** with `DEEPSEEK_API_KEY` in repo-root `.env`.
 
 - [x] `pip install -e ".[trilevel,dev]"` succeeds from repo root
 - [x] `pytest trilevel_research/tests/ -v` — 126 passed
@@ -65,4 +65,4 @@ Required items pass; optional gpu smoke skipped/blocked (no `GPU_BENCH_BIN` loca
 - [x] `ruff check trilevel_research/` clean
 - [x] Upstream CI unchanged: `pytest tests/` — 110 passed, no tri-level imports
 - [x] `git diff main -- core/ domains/train_opt/` — empty (upstream identical to `main`)
-- [ ] (Optional) gpu_bench ablation smoke — SKIPPED locally; BLOCKED on ASUS (`DEEPSEEK_API_KEY` unset)
+- [x] (Optional) gpu_bench ablation smoke — SKIPPED locally; **PASS on ASUS** (2026-07-17, Group C ×1; `.env` at repo root)

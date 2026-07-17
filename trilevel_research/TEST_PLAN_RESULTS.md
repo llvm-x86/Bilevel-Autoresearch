@@ -3,7 +3,7 @@
 **Date:** 2026-07-17  
 **Branch:** `feature/tri-level-autoresearch`  
 **Repo:** `/home/a112/Bilevel-Autoresearch`  
-**Overall:** **PASS** (all required items pass; optional gpu_bench skipped/blocked)
+**Overall:** **PASS** (all required + optional ASUS gpu smoke pass)
 
 ---
 
@@ -17,7 +17,7 @@
 | 4 | Import smoke `TriLevelController` | [x] PASS |
 | 5 | `ruff check trilevel_research/` | [x] PASS |
 | 6 | Upstream `pytest tests/` | [x] PASS |
-| 7 | gpu_bench ablation smoke (optional) | [ ] SKIPPED / BLOCKED |
+| 7 | gpu_bench ablation smoke (optional) | [x] PASS (ASUS) |
 | 8 | `git diff main -- core/ domains/train_opt/` empty (upstream == main) | [x] PASS |
 
 ---
@@ -102,13 +102,17 @@ GPU_BENCH_BIN=/home/a112/gpu-bench/build/gpu_bench \
   --group C --repeats 1 --inner-budget 3 --outer-cycles 2
 ```
 
-**Result:** BLOCKED — module imports and `gpu_bench` binary OK; run failed immediately:
+**Initial check (earlier sub-agent):** Reported BLOCKED — that was **wrong**. `DEEPSEEK_API_KEY` was already in `/home/a112/Bilevel-Autoresearch/.env` on ASUS; all live gpu_bench runs (16-run ablation, bilevel_improves, run_iterative) used DeepSeek successfully.
 
-```
-OSError: API key not set: DEEPSEEK_API_KEY
+**Re-run (2026-07-17):**
+
+```bash
+GPU_BENCH_BIN=/home/a112/gpu-bench/build/gpu_bench \
+  python3 -m trilevel_research.experiments.gpu_bench_tri_level.run_ablation \
+  --group C --repeats 1 --inner-budget 3 --outer-cycles 2
 ```
 
-`trilevel_research/` synced to ASUS; upstream `core/` and `domains/` restored after rsync layout fix. Full live smoke requires `DEEPSEEK_API_KEY` in `/home/a112/Bilevel-Autoresearch/.env` on ASUS.
+**Result:** PASS — C1 completed (`improvement=5.646`, DeepSeek HTTP 200). `run_ablation.py` loads repo-root `.env` automatically.
 
 ---
 
@@ -141,4 +145,4 @@ git diff main -- core/ domains/train_opt/   # working tree vs main
 
 ## Ready for review?
 
-**Yes** — all **required** items pass. Optional gpu_bench live smoke skipped locally (`GPU_BENCH_BIN` unset) and blocked on ASUS (`DEEPSEEK_API_KEY` unset); not required for merge decision given documented negative/inconclusive live results in REPORT.md.
+**Yes** — all **required** items pass; optional gpu_bench smoke **PASS on ASUS** (local skipped, no `GPU_BENCH_BIN`).
