@@ -16,13 +16,13 @@ schedule, validation harness) against historical L2 session artifacts.
 | L2 validated rate | 0% | 0% |
 | Tabu blocks | — | 3 |
 | Harness blocks | — | 0 |
-| L3 fire decisions | — | 5 |
+| L3 fire decisions | — | 6 |
 
 ## Interpretation
 
 - **L2 revert rate drops** from 100% to 67% — tabu + harness prevent re-applying broken mechanisms.
 - **Tabu registry** would have blocked 3 duplicate/failed mechanism proposals across repeats.
-- **Adaptive schedule** triggered 5 Level 3 escalations (high L2 revert rate in all C repeats).
+- **Adaptive schedule** triggered 6 Level 3 escalations (high L2 revert rate in all C repeats).
 
 ## Counterfactual task estimate
 
@@ -45,7 +45,7 @@ schedule, validation harness) against historical L2 session artifacts.
 ### C3
 - Δval_bpb: 0.0580
 - C revert rate: 100% → F: 0%
-- Tabu blocks: 1, harness blocks: 0, L3 fires: 1
+- Tabu blocks: 1, harness blocks: 0, L3 fires: 2
 
 ## Limitations
 

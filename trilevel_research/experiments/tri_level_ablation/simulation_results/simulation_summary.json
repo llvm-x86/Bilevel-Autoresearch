@@ -18,7 +18,7 @@
     "l2_validated_rate": 0.0,
     "tabu_blocks_total": 3,
     "harness_blocks_total": 0,
-    "l3_fire_decisions": 5
+    "l3_fire_decisions": 6
   },
   "per_repeat": [
     {
@@ -46,13 +46,13 @@
           "l2_round": 1,
           "fire_level2": true,
           "fire_level3": true,
-          "reason": "fixed L2 interval (2 cycles); L2 revert rate 100%"
+          "reason": "high discard rate (60%); L2 revert rate 100%"
         },
         {
           "l2_round": 2,
           "fire_level2": true,
           "fire_level3": true,
-          "reason": "fixed L2 interval (2 cycles); L2 revert rate 100%; L3 interval (2 L2 rounds)"
+          "reason": "high discard rate (60%); L2 revert rate 100%; L3 interval (2 L2 rounds)"
         }
       ]
     },
@@ -110,19 +110,19 @@
       },
       "tabu_blocks": 1,
       "harness_blocks": 0,
-      "l3_fires": 1,
+      "l3_fires": 2,
       "schedule": [
         {
           "l2_round": 1,
           "fire_level2": true,
-          "fire_level3": false,
-          "reason": "fixed L2 interval (2 cycles)"
+          "fire_level3": true,
+          "reason": "high discard rate (60%); 1 consecutive L2 failure(s)"
         },
         {
           "l2_round": 2,
           "fire_level2": true,
           "fire_level3": true,
-          "reason": "fixed L2 interval (2 cycles); L2 revert rate 50%; L3 interval (2 L2 rounds)"
+          "reason": "high discard rate (70%); L2 revert rate 50%; L3 interval (2 L2 rounds)"
         }
       ]
     }
