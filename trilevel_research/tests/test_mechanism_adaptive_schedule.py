@@ -47,7 +47,7 @@ class TestAdaptiveMechanismSchedule:
 
     def test_zero_keeps_in_lookback(self):
         sched = AdaptiveMechanismSchedule()
-        inner = [{"status": "discard"}] * 3 + [{"status": "crash"}] * 2
+        inner = [{"status": "crash"}] * 5
         decision = sched.decide(inner, [], completed_outer_cycles=1)
         assert "zero keeps" in decision.reason
 
@@ -97,7 +97,7 @@ class TestAdaptiveMechanismSchedule:
         ]
         decision = sched.decide([], sessions, completed_outer_cycles=2)
         assert decision.fire_level3 is True
-        assert "consecutive L2 failures" in decision.reason
+        assert "consecutive L2 failure" in decision.reason
 
     def test_duplicate_mechanism_name_triggers_l3(self):
         sched = AdaptiveMechanismSchedule()

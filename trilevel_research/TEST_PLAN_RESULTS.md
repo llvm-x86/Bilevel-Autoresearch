@@ -18,7 +18,7 @@
 | 5 | `ruff check trilevel_research/` | [x] PASS |
 | 6 | Upstream `pytest tests/` | [x] PASS |
 | 7 | gpu_bench ablation smoke (optional) | [ ] SKIPPED / BLOCKED |
-| 8 | `git diff --stat main...HEAD -- core/ domains/train_opt/` deletions-only | [x] PASS (after fix) |
+| 8 | `git diff main -- core/ domains/train_opt/` empty (upstream == main) | [x] PASS |
 
 ---
 
@@ -141,4 +141,4 @@ git diff main -- core/ domains/train_opt/   # working tree vs main
 
 ## Ready for review?
 
-**No** — optional gpu_bench live smoke not completed (local skipped; ASUS blocked on API key). All **required** items pass.
+**Yes** — all **required** items pass. Optional gpu_bench live smoke skipped locally (`GPU_BENCH_BIN` unset) and blocked on ASUS (`DEEPSEEK_API_KEY` unset); not required for merge decision given documented negative/inconclusive live results in REPORT.md.

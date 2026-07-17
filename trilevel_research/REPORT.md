@@ -4,30 +4,40 @@
 
 | Verdict | Status |
 |---------|--------|
-| **Overall** | **INCONCLUSIVE** — L2 never applied on live gpu_bench; CPU simulation is suggestive only |
-| GPU bench (Group C vs F) | **INCONCLUSIVE** — 100% L2 `import_fail`; L3 fired but 0% apply |
-| CPU counterfactual (paper Group C fixtures) | **Suggestive, not measured** — design validation only |
+| **Overall** | **NEGATIVE / INCONCLUSIVE** — no validated LLM/L3 task win; bi-level remains recommended default |
+| GPU bench 16-run ablation | **INCONCLUSIVE** — 0% inner-loop L2 apply (`import_fail`); L3 fired, 0% apply; Δval_bpb noise-level |
+| `bilevel_improves_trilevel` 4×4 ablation | **MARGINAL / NOT ATTRIBUTABLE** — +0.0123 Δval_bpb via bootstrap schedule, not LLM/L3 |
+| `run_iterative` (20% margin target) | **FAIL** — best +9.26% (unreliable); restart −0.30% / −0.49%; driver crashed twice |
+| CPU counterfactual (paper fixtures) | **Design-only** — +0.0067 estimated Δval_bpb; not live training evidence |
 
 ---
 
 ## Executive summary
 
-Tri-level autoresearch adds Level 3 meta-mechanism research on top of the bilevel stack (Groups C/F): a tabu registry, adaptive L2/L3 schedule, and validation harness that gate Level-2 mechanism patches. The extension lives entirely under `trilevel_research/`; upstream `core/` and `domains/train_opt/` are **reverted to pre–Level-3 state** (deletions only in the diff).
+Tri-level autoresearch adds Level 3 meta-mechanism research on top of the bilevel stack (Groups C/F): tabu registry, adaptive L2/L3 schedule, and validation harness gating Level-2 patches. The extension lives entirely under `trilevel_research/`; upstream `core/` and `domains/train_opt/` are **identical to `main`**.
 
-**What we can say honestly today:**
+**Conclusion:** Tri-level does not demonstrate validated task superiority over bi-level. Added complexity (L3 meta-loop, tabu, schedule, iterative optimization) did not produce reliable live gains attributable to LLM-driven or L3 meta-mechanism research. **Recommendation: use bi-level as the default stack; enable tri-level only as optional research.**
 
-1. **GPU bench (AMD RX 580, 16 paired runs):** Completed successfully but is **INCONCLUSIVE**. Zero L2 mechanism patches were applied in either group (100% `import_fail`). L3 fired once per F repeat but also failed to apply meta-mechanism patches. Without successful L2/L3 engagement, neither mechanistic nor task-level hypotheses could be tested. Mean Δval_bpb was 6.3715 ± 0.0372 (C) vs 6.3686 ± 0.0422 (F); paired wins for F were 4/8 (need ≥6/8 for significance).
+No validated LLM/L3 win; one bootstrap-assisted marginal gain (+0.0123 Δval_bpb); iterative 20% target failed (best +9.26%, restart runs negative, driver crashed).
 
-2. **CPU counterfactual (paper Group C fixtures):** Offline replay suggests tri-level policies *would* cut L2 apply rate from 83% → 33% and revert rate from 100% → 67%, with 3 tabu blocks and 5 L3 escalations. A conservative heuristic estimates **+0.0067 Δval_bpb** from avoided bad L2 patches — **not measured on live training**. This supports the *design* of L3 guardrails, not end-to-end efficacy.
+### Evidence (all key experiments)
 
-3. **Blocker for a decisive verdict:** Fix L2 codegen/import validation on the `gpu_bench` domain (and smoke-test L2 apply rate > 0) before claiming mechanistic or task superiority.
+| Experiment | Δval_bpb / margin | L2 apply | L3 | Verdict |
+|------------|-------------------|----------|-----|---------|
+| Initial gpu_bench ablation (16 paired runs, AMD RX 580) | C 6.3715 ± 0.0372 vs F 6.3686 ± 0.0422; 4/8 paired wins for F | **0%** inner-loop (100% `import_fail`) | fired, **0% apply** | **INCONCLUSIVE** — mechanism untested; task diff noise-level |
+| `bilevel_improves_trilevel` 4×4 paired ablation | F − C = **+0.0123** (C mean 6.3380, F mean 6.3504) | **0%** on all 4×4 ablation repeats; ouroboros schedule L2 **1.0** (bootstrap only); LLM schedule **0/2** | meta-loop did not deliver validated win | **MARGINAL / NOT ATTRIBUTABLE** — bootstrap patch, not LLM/L3 |
+| `run_iterative` 20% relative margin | Iter 1 (PID 38608): **+9.26%** (**unreliable** — polluted by C outliers); restart (PID 44049): **−0.30%**, **−0.49%**; target 20% | bootstrap ouroboros each iter | L3 ~7% apply (anchor mismatch) | **FAIL** — driver crashed twice; no `iterative_summary.json` |
+| CPU counterfactual (paper Group C fixtures) | estimated **+0.0067** from reduced apply/revert | simulated 83% → 33% apply | 5 L3 fires, 3 tabu blocks | **Design-only** — not live training |
 
 → Full gpu_bench write-up: [experiments/gpu_bench_tri_level/REPORT.md](experiments/gpu_bench_tri_level/REPORT.md)  
+→ Iterative 20% margin: [experiments/bilevel_improves_trilevel/REPORT.md](experiments/bilevel_improves_trilevel/REPORT.md)  
 → CPU simulation detail: [experiments/tri_level_ablation/REPORT.md](experiments/tri_level_ablation/REPORT.md)
 
 ---
 
-## Experiment 1: CPU counterfactual (paper Group C fixtures)
+## Experiment detail
+
+### CPU counterfactual (paper Group C fixtures)
 
 Replay of published Group C L2 session artifacts — no GPU, no LLM.
 
@@ -39,29 +49,30 @@ Replay of published Group C L2 session artifacts — no GPU, no LLM.
 | L3 fire decisions | — | 5 |
 | Estimated Δval_bpb gain | — | +0.0067 (heuristic) |
 
-**Interpretation:** Tabu + adaptive schedule + harness would have blocked repeat failures and reduced wasteful L2 applies. This is a **counterfactual replay**, not a re-run of training.
+Counterfactual replay only — supports guardrail *design*, not end-to-end efficacy.
 
----
-
-## Experiment 2: GPU bench tri-level vs bi-level
+### GPU bench tri-level vs bi-level (initial 16-run ablation)
 
 16-run paired ablation (8× Group C vs 8× Group F) on HIP MLP `gpu_bench` (AMD RX 580).
 
-| Verdict | Result |
-|---------|--------|
-| Overall | **INCONCLUSIVE** |
-| Tier A (Mechanistic) | **FAIL** — 0% L2 apply rate both groups |
-| Tier B (Task) | **FAIL** — 4/8 paired wins for F |
+Every L2 session failed `import_fail` after codegen. L3 engaged on F repeats but could not apply patches. Inner-loop ablation L2 apply rate **0%** both groups; tri-level and bi-level runs were effectively identical at the mechanism layer.
 
-**Root cause:** Every L2 session failed `import_fail` after codegen. L3 engaged (1 fire/repeat on F) but could not apply patches either. Tri-level and bi-level runs were effectively identical at the mechanism layer; task metrics reflect L1 hyperparameter search noise only.
+### `bilevel_improves_trilevel` (post-bootstrap 4×4)
+
+After LLM schedule L2 failed 2/2, a **hand-written bootstrap schedule patch** was promoted (ouroboros L2 apply rate 1.0). The subsequent 4×4 paired ablation showed F beating C by +0.0123 Δval_bpb, but inner-loop ablation L2 apply remained **0% on all repeats** — the margin is not evidence of LLM-driven or L3 meta-mechanism superiority.
+
+### `run_iterative` (20% margin target)
+
+Driver crashed twice before completing 8 iterations. Iteration 1 reported **+9.26%** margin (PID 38608) but used bootstrap ouroboros with **unreliable C outliers** — do not treat as validated success. Restart run (PID 44049) showed F trailing C: **−0.30%** then **−0.49%**. No trajectory toward the 20% goal; no `iterative_summary.json` written.
 
 ---
 
 ## Conclusions & limitations
 
-- **Do not merge expecting proven L3 gains.** The PR ships an isolated, test-covered extension plus honest negative/inconclusive evidence.
-- **CPU simulation** supports L3 policy *design* (tabu + schedule) but does not re-run training or measure live val_bpb gains.
-- **GPU bench** failed to validate the stack end-to-end because generated L2/L3 code did not pass import validation — domain-specific codegen/import paths need hardening.
+- **Bi-level is the recommended default.** Tri-level adds tabu, adaptive schedule, and L3 gating without proven live task benefit over bi-level simplicity.
+- **Merge only as optional, removable research extension** with documented negative/inconclusive evidence — not for performance gains.
+- **Inner-loop ablation L2: 0% apply** throughout gpu_bench ablations; **ouroboros schedule L2: bootstrap only** (LLM 0/2).
+- **CPU simulation** supports L3 policy *design* but does not re-run training or measure live val_bpb gains.
 - Full live Group F on Karpathy `train.py` (RTX 5090 + DeepSeek) remains future work.
 
 ---
