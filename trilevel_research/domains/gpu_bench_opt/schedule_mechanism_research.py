@@ -11,10 +11,9 @@ import textwrap
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-
 from types import SimpleNamespace
 
-from core.base_mechanism_research import BaseMechanismResearcher, CODEGEN_SYSTEM
+from core.base_mechanism_research import CODEGEN_SYSTEM, BaseMechanismResearcher
 
 logger = logging.getLogger(__name__)
 
@@ -804,7 +803,7 @@ class ScheduleMechanismResearcher(BaseMechanismResearcher):
         return "L2/L3 cadence may not match inner-loop dynamics."
 
     def _build_codegen_task(self, mechanism_name: str, impl_strategy: str, target: str, spec: str) -> str:
-        del spec, mechanism_name
+        del spec  # task text is strategy-dependent only
         if impl_strategy == "replace_method":
             return (
                 "Write a REPLACEMENT for AdaptiveMechanismSchedule.decide(). "

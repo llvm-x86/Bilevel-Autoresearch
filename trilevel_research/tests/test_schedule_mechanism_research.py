@@ -6,14 +6,11 @@ from pathlib import Path
 
 import pytest
 
-from trilevel_research.core.adaptive_mechanism_schedule import (
-    AdaptiveMechanismSchedule,
-)
 from trilevel_research.domains.gpu_bench_opt.schedule_mechanism_research import (
     BOOTSTRAP_DECIDE_CODE,
+    VALIDATE_FIXTURE_TRACE,
     ScheduleMechanismResearcher,
     ScheduleMechanismResult,
-    VALIDATE_FIXTURE_TRACE,
 )
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -305,3 +302,12 @@ class TestAttempt2SamplePatch:
         if not result.validated:
             assert result.validation_error.startswith("validate_error:")
             assert result.validation_error != "import_fail"
+
+
+class TestCodegenTaskStrategies:
+    def test_build_codegen_task_all_strategies_no_name_error(self):
+        """Regression: new_helper_class branch referenced mechanism_name after del."""
+        researcher = ScheduleMechanismResearcher(api_key="mock")
+        for strategy in ("replace_method", "modify_init", "new_helper_class", "new_method"):
+            task = researcher._build_codegen_task("m", strategy, "decide", "spec")
+            assert isinstance(task, str) and task
