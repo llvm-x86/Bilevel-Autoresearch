@@ -1,13 +1,10 @@
 # Tri-Level CPU Simulation Report
 
 CPU-only counterfactual replay of paper ablation **Group C** fixtures
-(`experiments/ablations/paper_ablation/run2_results/results_C`).
+(`/home/a112/Bilevel-Autoresearch/experiments/ablations/paper_ablation/run2_results/results_C`).
 
 No GPU or LLM calls. Simulates Level 3 policies (tabu registry, adaptive
 schedule, validation harness) against historical L2 session artifacts.
-
-**Verified on:** local dev machine + `asus-kiosk` (Tailscale `100.78.97.35`, ethernet
-`10.42.0.92`) — 52 unit tests passed, simulation reproduced identically on both.
 
 ## Summary
 

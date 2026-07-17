@@ -323,14 +323,13 @@ class TrainMechanismResearcher(BaseMechanismResearcher):
 
         # --- Round 1: Explore ---
         logger.info(f"[TrainMechResearch {session_id}] Round 1: Exploration")
-        explore_prompt = EXPLORE_PROMPT.format(
-            n_iters=n_iters,
-            trace_summary=trace_summary,
-            runner_summary=runner_summary,
-            bottleneck=bottleneck,
-        )
         exploration = self.client.call(
-            explore_prompt,
+            EXPLORE_PROMPT.format(
+                n_iters=n_iters,
+                trace_summary=trace_summary,
+                runner_summary=runner_summary,
+                bottleneck=bottleneck,
+            ),
             system=EXPLORE_SYSTEM,
             max_tokens=4000,
         )
