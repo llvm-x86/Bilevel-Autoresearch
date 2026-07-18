@@ -1,0 +1,24 @@
+{
+  "max_size": 20,
+  "default_tenure": 3,
+  "run_token": "6bec33bb6d0c42fc9997ef06bba2e078",
+  "entries": [
+    {
+      "mechanism_name": "gpu_bench_mechanism_20260717_182822",
+      "target": "GpuBenchHelper_20260717_182822",
+      "reason": "recent_success",
+      "added_at_round": 1,
+      "expires_at_round": 2,
+      "strategy": ""
+    },
+    {
+      "mechanism_name": "gpu_bench_mechanism_20260717_183056",
+      "target": "GpuBenchHelper_20260717_183056",
+      "reason": "recent_success",
+      "added_at_round": 2,
+      "expires_at_round": 3,
+      "strategy": ""
+    }
+  ],
+  "strategy_entries": []
+}

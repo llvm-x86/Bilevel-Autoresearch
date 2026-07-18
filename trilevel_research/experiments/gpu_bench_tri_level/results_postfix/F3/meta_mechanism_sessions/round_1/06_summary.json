@@ -1,0 +1,8 @@
+{
+  "session_id": "20260717_183138",
+  "patch_name": "meta_patch_20260717_183138",
+  "implementation_strategy": "modify_init",
+  "target": "method or class name",
+  "code_retries": 0,
+  "hypothesis": "method signature incompatible with the real runner). Separating validation from execution catches these without reaching the import step, reducing both import failures and invalid patches that would otherwise crash later.\n\n**Implementation complexity**: 4\n\n**Risk**: medium (adds logic surface area; "
+}

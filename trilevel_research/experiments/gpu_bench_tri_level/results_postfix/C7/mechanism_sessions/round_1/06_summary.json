@@ -1,0 +1,10 @@
+{
+  "session_id": "20260717_182235",
+  "mechanism_name": "expand_radius_on_discards",
+  "implementation_strategy": "modify_init",
+  "target": "GpuBenchHelper_20260717_182235",
+  "code_retries": 0,
+  "applied": true,
+  "validated": true,
+  "validation_error": ""
+}

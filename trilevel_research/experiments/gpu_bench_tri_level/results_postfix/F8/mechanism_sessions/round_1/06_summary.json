@@ -1,0 +1,10 @@
+{
+  "session_id": "20260717_182844",
+  "mechanism_name": "adaptive_perturbation_scaling",
+  "implementation_strategy": "modify_init",
+  "target": "GpuBenchHelper_20260717_182844",
+  "code_retries": 1,
+  "applied": true,
+  "validated": true,
+  "validation_error": ""
+}

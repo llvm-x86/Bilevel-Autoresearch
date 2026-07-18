@@ -1,0 +1,8 @@
+{
+  "session_id": "20260717_182759",
+  "patch_name": "syntactic_import_check_before_execution",
+  "implementation_strategy": "modify_init",
+  "target": "GpuBenchRunner.__init__` and `GpuBenchRunner._run_single` (or the private method that compiles and executes the LLM-generated class code)",
+  "code_retries": 0,
+  "hypothesis": "**Selected**: Hypothesis 1 — it is the most targeted at the actual observable bottleneck (import failures) and has the lowest risk of introducing silent state corruption or environmental mismatches, though it requires careful AST parsing to avoid false negatives."
+}

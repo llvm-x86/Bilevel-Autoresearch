@@ -1,0 +1,8 @@
+{
+  "session_id": "20260717_183153",
+  "patch_name": "meta_patch_20260717_183153",
+  "implementation_strategy": "new_helper_class",
+  "target": "MetaHelper_20260717_183153",
+  "code_retries": 0,
+  "hypothesis": "**Selected**: Hypothesis 1 — it's the simplest with highest score, catches real issues like missing imports at syntactically safe point before execution, but its import-detection logic must be rewritten to use AST walking for detecting `Import`/`ImportFrom` nodes rather than naive string matching."
+}

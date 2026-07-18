@@ -1,0 +1,24 @@
+{
+  "max_size": 20,
+  "default_tenure": 3,
+  "run_token": "db3d78c82a0a4290927ff65e0f578158",
+  "entries": [
+    {
+      "mechanism_name": "gpu_bench_mechanism_20260717_182234",
+      "target": "GpuBenchHelper_20260717_182234",
+      "reason": "recent_success",
+      "added_at_round": 1,
+      "expires_at_round": 2,
+      "strategy": ""
+    },
+    {
+      "mechanism_name": "momentum_batch_exploration",
+      "target": "run_iteration` method in `GpuBenchRunner",
+      "reason": "recent_success",
+      "added_at_round": 2,
+      "expires_at_round": 3,
+      "strategy": ""
+    }
+  ],
+  "strategy_entries": []
+}

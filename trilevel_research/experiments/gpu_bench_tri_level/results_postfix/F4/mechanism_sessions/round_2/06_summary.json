@@ -1,0 +1,10 @@
+{
+  "session_id": "20260717_183101",
+  "mechanism_name": "adaptive_acceptance_with_decay",
+  "implementation_strategy": "replace_method",
+  "target": "run_iteration` method in `GpuBenchRunner` class",
+  "code_retries": 0,
+  "applied": false,
+  "validated": false,
+  "validation_error": "patch_apply_error: Method 'run_iteration` method in `GpuBenchRunner` class' not found"
+}

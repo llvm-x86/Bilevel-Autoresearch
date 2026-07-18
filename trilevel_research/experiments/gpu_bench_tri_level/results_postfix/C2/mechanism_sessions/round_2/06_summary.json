@@ -1,0 +1,10 @@
+{
+  "session_id": "20260717_182445",
+  "mechanism_name": "restart_with_higher_variance",
+  "implementation_strategy": "modify_init",
+  "target": "GpuBenchRunner` class (`__init__` and new method `_handle_stuck_state`)",
+  "code_retries": 1,
+  "applied": true,
+  "validated": true,
+  "validation_error": ""
+}

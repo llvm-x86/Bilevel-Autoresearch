@@ -1,0 +1,8 @@
+{
+  "session_id": "20260717_183153",
+  "patch_name": "staged_import_validation_researcher",
+  "implementation_strategy": "new_helper_class",
+  "target": "GpuBenchMechanismResearcher` class in `mechanism_research.py",
+  "code_retries": 0,
+  "hypothesis": "**Selected**: Hypothesis 3 — It is the only hypothesis that provides *actionable diagnostic information* without changing the failure behavior, which is the correct first step before attempting recovery or restructuring."
+}

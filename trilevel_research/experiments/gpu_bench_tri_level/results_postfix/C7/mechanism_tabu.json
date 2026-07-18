@@ -1,0 +1,16 @@
+{
+  "max_size": 20,
+  "default_tenure": 3,
+  "run_token": "3607630c7f2f4e9da5cb396b502aeb89",
+  "entries": [
+    {
+      "mechanism_name": "expand_radius_on_discards",
+      "target": "GpuBenchHelper_20260717_182235",
+      "reason": "recent_success",
+      "added_at_round": 1,
+      "expires_at_round": 2,
+      "strategy": ""
+    }
+  ],
+  "strategy_entries": []
+}

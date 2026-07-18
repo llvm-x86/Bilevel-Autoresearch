@@ -1,0 +1,7 @@
+{
+  "group": "C",
+  "repeat": 5,
+  "status": "error",
+  "error": "'BenchTrace' object has no attribute 'results'",
+  "traceback": "Traceback (most recent call last):\n  File \"/home/a112/Bilevel-Autoresearch/trilevel_research/experiments/gpu_bench_tri_level/run_ablation.py\", line 146, in run_group\n    report = controller.run()\n  File \"/home/a112/Bilevel-Autoresearch/trilevel_research/domains/gpu_bench_opt/tri_level_controller.py\", line 183, in run\n    batch_report = outer.run()\n  File \"/home/a112/Bilevel-Autoresearch/trilevel_research/domains/gpu_bench_opt/outer.py\", line 88, in run\n    self.runner.run_baseline()\n  File \"/home/a112/Bilevel-Autoresearch/trilevel_research/experiments/gpu_bench_tri_level/results/C5/runner.py\", line 165, in run_baseline\n    self.trace.results.append(result)\nAttributeError: 'BenchTrace' object has no attribute 'results'\n"
+}

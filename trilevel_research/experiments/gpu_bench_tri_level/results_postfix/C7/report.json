@@ -1,0 +1,7 @@
+{
+  "group": "C",
+  "repeat": 7,
+  "status": "error",
+  "error": "local variable 'DiscardTracker' referenced before assignment",
+  "traceback": "Traceback (most recent call last):\n  File \"/home/a112/Bilevel-Autoresearch/trilevel_research/experiments/gpu_bench_tri_level/run_ablation.py\", line 146, in run_group\n    report = controller.run()\n  File \"/home/a112/Bilevel-Autoresearch/trilevel_research/domains/gpu_bench_opt/tri_level_controller.py\", line 168, in run\n    runner = PatchedRunner(\n  File \"/home/a112/Bilevel-Autoresearch/trilevel_research/experiments/gpu_bench_tri_level/results/C7/runner.py\", line 96, in __init__\n    self.discard_tracker = DiscardTracker()\nUnboundLocalError: local variable 'DiscardTracker' referenced before assignment\n"
+}

@@ -1,0 +1,809 @@
+{
+  "group": "F",
+  "baseline_bpb": 6.411629,
+  "best_val_bpb": 0.01734,
+  "best_iteration": 17,
+  "improvement": 6.394289,
+  "total_iterations": 63,
+  "outer_cycles": 6,
+  "level2_rounds": 2,
+  "level3_rounds": 1,
+  "level2_sessions": [
+    {
+      "round": 1,
+      "session_id": "20260717_182821",
+      "mechanism_name": "gpu_bench_mechanism_20260717_182821",
+      "implementation_strategy": "new_helper_class",
+      "target": "GpuBenchHelper_20260717_182821",
+      "hypothesis": "**Selected**: None of the above — the trace reveals a discrete optimization cliff (BS=512 vs BS=256) that continuous perturbation mechanisms cannot overcome; the correct intervention is to explore non-power-of-2 batch sizes or adaptive precision training.",
+      "code_retries": 0,
+      "applied": true,
+      "validated": true,
+      "blocked_by_tabu": false,
+      "error": "",
+      "session_dir": "/home/a112/Bilevel-Autoresearch/trilevel_research/experiments/gpu_bench_tri_level/results/F4/mechanism_sessions/round_1"
+    },
+    {
+      "round": 2,
+      "session_id": "20260717_183101",
+      "mechanism_name": "adaptive_acceptance_with_decay",
+      "implementation_strategy": "replace_method",
+      "target": "run_iteration` method in `GpuBenchRunner` class",
+      "hypothesis": "g the optimal ridge, avoiding wasted exploration in orthogonal directions.\n5. **Implementation complexity**: 5 (CMA-ES requires eigendecomposition of covariance matrix each update, numerical stability for near-singular matrices, hyperparameters for population size, and history management across mult",
+      "code_retries": 0,
+      "applied": false,
+      "validated": false,
+      "blocked_by_tabu": false,
+      "error": "",
+      "session_dir": "/home/a112/Bilevel-Autoresearch/trilevel_research/experiments/gpu_bench_tri_level/results/F4/mechanism_sessions/round_2"
+    }
+  ],
+  "level3_sessions": [
+    {
+      "round": 1,
+      "applied": true,
+      "session_id": "20260717_183157",
+      "patch_name": "versioned_rollback_context",
+      "strategy": "new_helper_class",
+      "target": "MetaHelper_20260717_183157"
+    }
+  ],
+  "trace": [
+    {
+      "iter": 0,
+      "bpb": 6.411629,
+      "status": "keep",
+      "desc": "baseline",
+      "changes": {}
+    },
+    {
+      "iter": 2,
+      "bpb": 3.020975,
+      "status": "keep",
+      "desc": "Perturbing LR slightly to 0.001 may reduce overshooting and improve convergence given the current stable performance.",
+      "changes": {
+        "LR": 0.003
+      }
+    },
+    {
+      "iter": 3,
+      "bpb": 7.831542,
+      "status": "discard",
+      "desc": "Slightly lower LR reduces overshooting and may improve convergence near optimum.",
+      "changes": {
+        "LR": 0.001
+      }
+    },
+    {
+      "iter": 4,
+      "bpb": 0.132586,
+      "status": "keep",
+      "desc": "Slightly higher LR with small weight decay may accelerate convergence near the optimum while preventing overfitting, potentially lowering bpb.",
+      "changes": {
+        "LR": 0.005,
+        "WEIGHT_DECAY": 0.0001
+      }
+    },
+    {
+      "iter": 5,
+      "bpb": 7.956663,
+      "status": "discard",
+      "desc": "Slightly lower LR with a small increase in weight decay may reduce overfitting while maintaining stable convergence near the current best.",
+      "changes": {
+        "LR": 0.003,
+        "WEIGHT_DECAY": 0.0005
+      }
+    },
+    {
+      "iter": 6,
+      "bpb": 7.970385,
+      "status": "discard",
+      "desc": "Slightly lower LR than best config reduces risk of overshooting while maintaining faster convergence near optimum.",
+      "changes": {
+        "LR": 0.003
+      }
+    },
+    {
+      "iter": 7,
+      "bpb": 7.894311,
+      "status": "discard",
+      "desc": "A moderate LR with zero weight decay may improve gradient dynamics and prevent over-regularization, lowering val_bpb.",
+      "changes": {
+        "LR": 0.003,
+        "WEIGHT_DECAY": 0.0
+      }
+    },
+    {
+      "iter": 8,
+      "bpb": 7.8116,
+      "status": "discard",
+      "desc": "A slightly lower learning rate reduces the risk of overshooting the optimum given the current best bpb is already low, allowing for finer convergence.",
+      "changes": {
+        "LR": 0.003
+      }
+    },
+    {
+      "iter": 9,
+      "bpb": 7.420248,
+      "status": "discard",
+      "desc": "Slightly lower LR than best config reduces risk of overshooting while maintaining convergence near the optimum.",
+      "changes": {
+        "LR": 0.003
+      }
+    },
+    {
+      "iter": 10,
+      "bpb": 8.00366,
+      "status": "discard",
+      "desc": "A slightly lower learning rate may allow the optimizer to settle into a better local minimum by reducing oscillations near the optimum.",
+      "changes": {
+        "LR": 0.003
+      }
+    },
+    {
+      "iter": 11,
+      "bpb": 6.164735,
+      "status": "discard",
+      "desc": "Increasing batch size with lower LR provides more stable gradient estimates to escape the poor local minima seen in recent trials.",
+      "changes": {
+        "LR": 0.003,
+        "BATCH_SIZE": 128
+      }
+    },
+    {
+      "iter": 12,
+      "bpb": 8.007944,
+      "status": "discard",
+      "desc": "Combining a slightly higher LR of 0.007 with small weight decay increases gradient steps while maintaining regularization, and a much smaller batch size of 32 introduces more gradient noise that may help escape local minima for a lower val_bpb.",
+      "changes": {
+        "LR": 0.007,
+        "WEIGHT_DECAY": 0.0001,
+        "BATCH_SIZE": 32
+      }
+    },
+    {
+      "iter": 13,
+      "bpb": 8.004698,
+      "status": "discard",
+      "desc": "Higher LR with small weight decay and smaller batch size increases gradient noise, which may help escape local minima and improve validation BPB.",
+      "changes": {
+        "LR": 0.007,
+        "WEIGHT_DECAY": 0.0001,
+        "BATCH_SIZE": 32
+      }
+    },
+    {
+      "iter": 14,
+      "bpb": 7.893839,
+      "status": "discard",
+      "desc": "Higher LR with small weight decay and smaller batch size increases gradient noise to escape local minima, potentially improving bpb.",
+      "changes": {
+        "LR": 0.007,
+        "WEIGHT_DECAY": 0.0001,
+        "BATCH_SIZE": 32
+      }
+    },
+    {
+      "iter": 15,
+      "bpb": 8.004327,
+      "status": "discard",
+      "desc": "Reducing batch size to 32 with the best LR and weight decay increases gradient noise, potentially helping escape local minima and improving validation BPB.",
+      "changes": {
+        "LR": 0.005,
+        "WEIGHT_DECAY": 0.0001,
+        "BATCH_SIZE": 32
+      }
+    },
+    {
+      "iter": 16,
+      "bpb": 0.027269,
+      "status": "keep",
+      "desc": "Slightly higher LR with a touch more weight decay and larger batch size reduces gradient noise and improves generalization",
+      "changes": {
+        "LR": 0.007,
+        "WEIGHT_DECAY": 0.0002,
+        "BATCH_SIZE": 256
+      }
+    },
+    {
+      "iter": 17,
+      "bpb": 0.01734,
+      "status": "keep",
+      "desc": "Larger batch size reduces gradient noise, enabling stable training with a moderately high LR and low weight decay for improved generalization.",
+      "changes": {
+        "LR": 0.005,
+        "WEIGHT_DECAY": 0.0001,
+        "BATCH_SIZE": 512
+      }
+    },
+    {
+      "iter": 18,
+      "bpb": 0.023165,
+      "status": "discard",
+      "desc": "slightly higher LR with a moderate batch size reduces gradient noise and improves convergence.",
+      "changes": {
+        "LR": 0.006,
+        "WEIGHT_DECAY": 0.00015,
+        "BATCH_SIZE": 384
+      }
+    },
+    {
+      "iter": 19,
+      "bpb": 7.585185,
+      "status": "discard",
+      "desc": "Smaller batch size increases gradient noise which may help generalization, while retaining the best LR and weight decay coupling.",
+      "changes": {
+        "LR": 0.006,
+        "WEIGHT_DECAY": 0.0001,
+        "BATCH_SIZE": 64
+      }
+    },
+    {
+      "iter": 20,
+      "bpb": 2.449641,
+      "status": "discard",
+      "desc": "Slightly smaller batch size than the best with the same best LR and weight decay may reduce gradient noise just enough to improve generalization while maintaining stability.",
+      "changes": {
+        "LR": 0.005,
+        "WEIGHT_DECAY": 0.0001,
+        "BATCH_SIZE": 256
+      }
+    },
+    {
+      "iter": 21,
+      "bpb": 7.991284,
+      "status": "discard",
+      "desc": "Very small batch size increases gradient noise, which with the proven LR and weight decay may improve generalization and lower val_bpb further.",
+      "changes": {
+        "LR": 0.005,
+        "WEIGHT_DECAY": 0.0001,
+        "BATCH_SIZE": 32
+      }
+    },
+    {
+      "iter": 0,
+      "bpb": 6.411629,
+      "status": "keep",
+      "desc": "baseline",
+      "changes": {}
+    },
+    {
+      "iter": 2,
+      "bpb": 3.020975,
+      "status": "keep",
+      "desc": "Reduce learning rate to 0.001 for more stable convergence, as current LR may be slightly too high given the small GPU and limited training steps.",
+      "changes": {
+        "LR": 0.003
+      }
+    },
+    {
+      "iter": 3,
+      "bpb": 7.831542,
+      "status": "discard",
+      "desc": "Reducing learning rate to 0.001 should enable more stable convergence and lower validation bits-per-byte.",
+      "changes": {
+        "LR": 0.001
+      }
+    },
+    {
+      "iter": 4,
+      "bpb": 0.115305,
+      "status": "keep",
+      "desc": "Adding slight weight decay may regularize the model and reduce overfitting, likely improving validation bpb.",
+      "changes": {
+        "WEIGHT_DECAY": 0.0001
+      }
+    },
+    {
+      "iter": 5,
+      "bpb": 7.46884,
+      "status": "discard",
+      "desc": "Increasing batch size to 128 with the best LR of 0.003 may stabilize gradient estimates and improve generalization, reducing val_bpb further.",
+      "changes": {
+        "LR": 0.003,
+        "BATCH_SIZE": 128
+      }
+    },
+    {
+      "iter": 6,
+      "bpb": 7.963098,
+      "status": "discard",
+      "desc": "Increasing hidden dimension to 512 with the best LR of 0.003 may boost capacity for better byte prediction, as current HIDDEN_DIM=256 appears constrained.",
+      "changes": {
+        "LR": 0.003,
+        "HIDDEN_DIM": 512
+      }
+    },
+    {
+      "iter": 7,
+      "bpb": 7.958737,
+      "status": "discard",
+      "desc": "Returning to LR=0.003 with the best known config replicates the best observed val_bpb of 0.115305 to confirm stability and enable further fine-tuning of other hyperparameters.",
+      "changes": {
+        "LR": 0.003
+      }
+    },
+    {
+      "iter": 8,
+      "bpb": 7.543814,
+      "status": "discard",
+      "desc": "Resetting to the known good baseline and removing weight decay prevents potential over-regularization thus focusing on a clean exploration from a proven stable starting point.",
+      "changes": {
+        "LR": 0.003,
+        "WEIGHT_DECAY": 0.0,
+        "BATCH_SIZE": 64,
+        "HIDDEN_DIM": 256
+      }
+    },
+    {
+      "iter": 9,
+      "bpb": 7.869181,
+      "status": "discard",
+      "desc": "Reducing learning rate may allow finer optimization steps and improve convergence for a more accurate byte predictor.",
+      "changes": {
+        "LR": 0.001
+      }
+    },
+    {
+      "iter": 10,
+      "bpb": 7.998903,
+      "status": "discard",
+      "desc": "Increasing hidden dimension to 512 with slight weight decay may improve capacity without severe overfitting, while keeping LR at best known value 0.003.",
+      "changes": {
+        "LR": 0.003,
+        "WEIGHT_DECAY": 0.001,
+        "HIDDEN_DIM": 512
+      }
+    },
+    {
+      "iter": 11,
+      "bpb": 7.796153,
+      "status": "discard",
+      "desc": "Decreasing LR to 0.001 with a larger batch size may stabilize gradients and improve convergence while maintaining capacity.",
+      "changes": {
+        "LR": 0.001,
+        "WEIGHT_DECAY": 0.0001,
+        "BATCH_SIZE": 128,
+        "HIDDEN_DIM": 256
+      }
+    },
+    {
+      "iter": 12,
+      "bpb": 8.004172,
+      "status": "discard",
+      "desc": "Slightly reducing LR to 0.0025 from the best 0.003 may allow more stable convergence and a lower val_bpb by avoiding slight overshooting near the optimum.",
+      "changes": {
+        "LR": 0.0025
+      }
+    },
+    {
+      "iter": 13,
+      "bpb": 8.009968,
+      "status": "discard",
+      "desc": "Slightly reducing weight decay from the best config may allow the model to fit the training data more precisely without overfitting, potentially lowering val_bpb.",
+      "changes": {
+        "LR": 0.003,
+        "WEIGHT_DECAY": 5e-05
+      }
+    },
+    {
+      "iter": 14,
+      "bpb": 7.994551,
+      "status": "discard",
+      "desc": "Slightly increasing weight decay to 0.00015 from the best config may improve generalization without destabilizing training.",
+      "changes": {
+        "LR": 0.003,
+        "WEIGHT_DECAY": 0.00015
+      }
+    },
+    {
+      "iter": 15,
+      "bpb": 7.954691,
+      "status": "discard",
+      "desc": "Slightly increasing the learning rate to 0.0035 from the best config may escape a shallow local minimum and find a lower bpb.",
+      "changes": {
+        "LR": 0.0035
+      }
+    },
+    {
+      "iter": 16,
+      "bpb": 1.508484,
+      "status": "discard",
+      "desc": "Reverting to the best known LR with no other changes tests whether recent failures were due to accidental noise or parameter coupling.",
+      "changes": {
+        "LR": 0.003
+      }
+    },
+    {
+      "iter": 17,
+      "bpb": 8.008821,
+      "status": "discard",
+      "desc": "A slight reduction in learning rate from the best config may allow finer weight updates and lower validation bpb.",
+      "changes": {
+        "LR": 0.0028
+      }
+    },
+    {
+      "iter": 18,
+      "bpb": 7.96247,
+      "status": "discard",
+      "desc": "Slightly lowering LR to 0.0025 from the best config may stabilize learning and reduce val_bpb further.",
+      "changes": {
+        "LR": 0.0025
+      }
+    },
+    {
+      "iter": 19,
+      "bpb": 5.755309,
+      "status": "discard",
+      "desc": "Slightly reducing weight decay to 0.00005 from the best config may reduce regularization and allow the model to fit the training data more closely.",
+      "changes": {
+        "LR": 0.003,
+        "WEIGHT_DECAY": 5e-05
+      }
+    },
+    {
+      "iter": 20,
+      "bpb": 7.987231,
+      "status": "discard",
+      "desc": "Slightly increasing both learning rate and weight decay from best config may improve generalization without destabilizing training.",
+      "changes": {
+        "LR": 0.0033,
+        "WEIGHT_DECAY": 0.00015
+      }
+    },
+    {
+      "iter": 21,
+      "bpb": 7.943378,
+      "status": "discard",
+      "desc": "Slightly reducing weight decay from the best config may reduce regularization just enough to let the model fit the training data better without overfitting.",
+      "changes": {
+        "LR": 0.003,
+        "WEIGHT_DECAY": 8e-05
+      }
+    },
+    {
+      "iter": 0,
+      "bpb": 6.411629,
+      "status": "keep",
+      "desc": "baseline",
+      "changes": {}
+    },
+    {
+      "iter": 2,
+      "bpb": 7.488911,
+      "status": "discard",
+      "desc": "Slightly lower LR may help fine-tune more carefully given current training step count.",
+      "changes": {
+        "LR": 0.001
+      }
+    },
+    {
+      "iter": 3,
+      "bpb": 7.967211,
+      "status": "discard",
+      "desc": "Lowering LR slightly can reduce gradient noise and stabilize training for better convergence, as the current 0.003 may be too aggressive for a small model on a limited step budget.",
+      "changes": {
+        "LR": 0.001
+      }
+    },
+    {
+      "iter": 4,
+      "bpb": 7.876297,
+      "status": "discard",
+      "desc": "Increasing hidden dimension may capture more byte patterns, potentially reducing test perplexity despite slower training.",
+      "changes": {
+        "HIDDEN_DIM": 512
+      }
+    },
+    {
+      "iter": 5,
+      "bpb": 7.581728,
+      "status": "discard",
+      "desc": "Adding a small weight decay may regularize the model and prevent overfitting, potentially improving generalization and lowering validation bits per byte.",
+      "changes": {
+        "WEIGHT_DECAY": 0.0001
+      }
+    },
+    {
+      "iter": 6,
+      "bpb": 0.173602,
+      "status": "keep",
+      "desc": "Moderate increase in hidden dimension with slightly lower LR may improve pattern capture without overfitting, potentially lowering bpb.",
+      "changes": {
+        "HIDDEN_DIM": 384,
+        "LR": 0.002
+      }
+    },
+    {
+      "iter": 7,
+      "bpb": 7.895558,
+      "status": "discard",
+      "desc": "Slightly increasing the learning rate may help the model escape shallow local minima faster, potentially improving the byte prediction accuracy given only 150 training steps.",
+      "changes": {
+        "LR": 0.003
+      }
+    },
+    {
+      "iter": 8,
+      "bpb": 7.408603,
+      "status": "discard",
+      "desc": "Slightly increasing the learning rate from the best value may help the model escape shallow local minima and converge to a lower validation bits-per-byte.",
+      "changes": {
+        "LR": 0.003
+      }
+    },
+    {
+      "iter": 9,
+      "bpb": 6.66261,
+      "status": "discard",
+      "desc": "Slightly increasing the learning rate may help the model escape shallow local minima and find a better optimum, as previous lower LR attempts have plateaued with a relatively high bpb.",
+      "changes": {
+        "LR": 0.003
+      }
+    },
+    {
+      "iter": 10,
+      "bpb": 8.008699,
+      "status": "discard",
+      "desc": "Slightly decreasing the learning rate from the best value may allow finer weight updates and better convergence, potentially improving the validation bits-per-byte.",
+      "changes": {
+        "LR": 0.0015
+      }
+    },
+    {
+      "iter": 11,
+      "bpb": 7.360626,
+      "status": "discard",
+      "desc": "Increasing LR may help the optimizer escape sharp minima and improve generalization despite recent failures, as prior best used a similarly high LR.",
+      "changes": {
+        "LR": 0.003
+      }
+    },
+    {
+      "iter": 12,
+      "bpb": 8.000748,
+      "status": "discard",
+      "desc": "Increasing hidden dimension and batch size with mild weight decay may stabilize training and improve generalization without altering the frozen learning rate.",
+      "changes": {
+        "WEIGHT_DECAY": 0.001,
+        "BATCH_SIZE": 128,
+        "HIDDEN_DIM": 512
+      }
+    },
+    {
+      "iter": 13,
+      "bpb": 8.003619,
+      "status": "discard",
+      "desc": "Moderate batch size with tiny weight decay may reduce gradient noise and stabilize training near the current best.",
+      "changes": {
+        "WEIGHT_DECAY": 0.0005,
+        "BATCH_SIZE": 128,
+        "HIDDEN_DIM": 384
+      }
+    },
+    {
+      "iter": 14,
+      "bpb": 7.967866,
+      "status": "discard",
+      "desc": "Slightly reducing hidden dim and batch size while adding negligible weight decay may reduce overfitting and gradient noise, improving convergence at the frozen LR.",
+      "changes": {
+        "WEIGHT_DECAY": 0.0001,
+        "BATCH_SIZE": 48,
+        "HIDDEN_DIM": 320
+      }
+    },
+    {
+      "iter": 15,
+      "bpb": 7.971103,
+      "status": "discard",
+      "desc": "Smaller batch size and hidden dim with minimal weight decay reduce gradient noise and model capacity, potentially preventing overfitting in this few-step regime.",
+      "changes": {
+        "WEIGHT_DECAY": 0.0001,
+        "BATCH_SIZE": 48,
+        "HIDDEN_DIM": 320
+      }
+    },
+    {
+      "iter": 16,
+      "bpb": 6.779622,
+      "status": "discard",
+      "desc": "Reducing batch size to 32 with a tiny weight decay may lower gradient noise and improve generalization without destabilizing training.",
+      "changes": {
+        "WEIGHT_DECAY": 0.0001,
+        "BATCH_SIZE": 32,
+        "HIDDEN_DIM": 384
+      }
+    },
+    {
+      "iter": 17,
+      "bpb": 8.003841,
+      "status": "discard",
+      "desc": "Reducing batch size to 32 with a tiny weight decay may lower gradient noise and improve generalization, while keeping hidden dim at the best setting.",
+      "changes": {
+        "WEIGHT_DECAY": 0.0001,
+        "BATCH_SIZE": 32,
+        "HIDDEN_DIM": 384
+      }
+    },
+    {
+      "iter": 18,
+      "bpb": 8.001785,
+      "status": "discard",
+      "desc": "Slightly increasing hidden dim to reduce underfitting while using a very small batch and moderate weight decay to control gradient noise and variance.",
+      "changes": {
+        "WEIGHT_DECAY": 0.0002,
+        "BATCH_SIZE": 24,
+        "HIDDEN_DIM": 448
+      }
+    },
+    {
+      "iter": 19,
+      "bpb": 7.16858,
+      "status": "discard",
+      "desc": "Slightly shrinking hidden dim while modestly reducing batch size and adding a tiny weight decay may prevent overfitting and improve gradient stability.",
+      "changes": {
+        "WEIGHT_DECAY": 5e-05,
+        "BATCH_SIZE": 48,
+        "HIDDEN_DIM": 352
+      }
+    },
+    {
+      "iter": 20,
+      "bpb": 7.945375,
+      "status": "discard",
+      "desc": "Slightly smaller hidden dim with moderate batch size and minimal weight decay may reduce overfitting while maintaining gradient stability.",
+      "changes": {
+        "WEIGHT_DECAY": 0.0001,
+        "BATCH_SIZE": 56,
+        "HIDDEN_DIM": 360
+      }
+    },
+    {
+      "iter": 21,
+      "bpb": 7.964198,
+      "status": "discard",
+      "desc": "Slightly reducing hidden dim and batch size from best with a tiny weight decay may reduce overfitting and gradient noise while keeping capacity adequate.",
+      "changes": {
+        "WEIGHT_DECAY": 5e-05,
+        "BATCH_SIZE": 48,
+        "HIDDEN_DIM": 320
+      }
+    }
+  ],
+  "outer_trace": [
+    {
+      "cycle": 0,
+      "analysis": {
+        "diagnosis": "The inner loop is repeatedly trying small LR perturbations around 0.003, but none are improving beyond the best at LR=0.005 with weight decay. This suggests the search is stuck in a narrow, unproductive region and ignoring the successful larger LR with weight decay. The HIDDEN_DIM is never tried but is active, wasting search capacity. BATCH_SIZE was tried once and discarded, but further exploration here may help. The 'explore' strategy is too broad without focus on what works.",
+        "strategy": "focused",
+        "freeze_params": [
+          "HIDDEN_DIM"
+        ],
+        "unfreeze_params": [],
+        "guidance": "Do not propose LR values near 0.003 anymore. Focus on larger LR near 0.005 in combination with small weight decay (around 0.0001). Also explore BATCH_SIZE values significantly different from the current default (e.g., 32, 64, 256, 512) to see if gradient noise changes improve validation BPB. Keep LR and WEIGHT_DECAY coupled as they worked best together.",
+        "reasoning": "Freezing HIDDEN_DIM sharpens focus on parameters that have shown improvement (LR, WEIGHT_DECAY) and introduces promising BATCH_SIZE variation. Switching to 'focused' strategy prevents wasteful LR micro-tuning and directs effort to the promising combination and untapped BATCH_SIZE dimension."
+      },
+      "best_bpb": 0.132586,
+      "config_after": {
+        "strategy": "focused",
+        "frozen": [
+          "HIDDEN_DIM"
+        ],
+        "guidance": "## Outer Loop Guidance (Cycle 1)\nDo not propose LR values near 0.003 anymore. Focus on larger LR near 0.005 in combination with small weight decay (around 0.0001). Also explore BATCH_SIZE values signi"
+      }
+    },
+    {
+      "cycle": 1,
+      "analysis": {
+        "diagnosis": "The inner loop has found a strong configuration at LR=0.005, WEIGHT_DECAY=0.0001, BATCH_SIZE=512 (iter 17). However, many subsequent iterations are discarding configurations that deviate too far from this point, especially reducing BATCH_SIZE below 256 or increasing LR beyond 0.007. The search is currently too broad in BATCH_SIZE and lacks a systematic narrowing around the promising region. The guidance is too vague about 'significantly different' batch sizes, leading to wasteful trials.",
+        "strategy": "focused",
+        "freeze_params": [],
+        "unfreeze_params": [],
+        "guidance": "Focus on BATCH_SIZE in the range [256, 1024], LR in [0.004, 0.006], and WEIGHT_DECAY in [0.00005, 0.00015]. Do not try BATCH_SIZE below 128 or LR above 0.008. The best result came from LR=0.005, WEIGHT_DECAY=0.0001, BATCH_SIZE=512; explore nearby values to confirm or improve. Keep LR and WEIGHT_DECAY coupled as before.",
+        "reasoning": "The best result (iter 17) is clearly the anchor. Large batch sizes (≥256) consistently improve stability, while very small batch sizes (32, 64) cause gradient noise and poor val_bpb. LR above 0.007 leads to instability. By narrowing the search range around the best known values, the inner loop can exploit the promising region more efficiently. No parameters need to be frozen yet because all three (LR, WD, BS) are still worth tuning within narrower bounds."
+      },
+      "best_bpb": 0.01734,
+      "config_after": {
+        "strategy": "focused",
+        "frozen": [
+          "HIDDEN_DIM"
+        ],
+        "guidance": "## Outer Loop Guidance (Cycle 2)\nFocus on BATCH_SIZE in the range [256, 1024], LR in [0.004, 0.006], and WEIGHT_DECAY in [0.00005, 0.00015]. Do not try BATCH_SIZE below 128 or LR above 0.008. The best"
+      }
+    },
+    {
+      "cycle": 0,
+      "analysis": {
+        "diagnosis": "The inner loop is stuck in an exploration loop, mostly varying LR and occasionally other parameters, but nearly all proposals (except iteration 4 with weight decay) are being discarded because they lead to high val_bpb (>7.4). The only real improvement came when WEIGHT_DECAY was added to the best LR config (iteration 4), achieving 0.1153. The inner loop is not exploiting this promising direction: it keeps reverting to LR-only changes or adding hidden dimension / batch size that degrade performance, wasting iterations. The search is too broad and random, missing the chance to refine around the best-found config.",
+        "strategy": "exploit",
+        "freeze_params": [
+          "HIDDEN_DIM",
+          "BATCH_SIZE"
+        ],
+        "unfreeze_params": [],
+        "guidance": "Focus on learning rate and weight decay tuning near the best known config: LR around 0.003 and WEIGHT_DECAY around 0.0001. Do not change HIDDEN_DIM or BATCH_SIZE, as those previously caused performance collapse. Try small adjustments to LR (e.g., 0.002–0.004) and weight decay (e.g., 0.00005–0.0005) individually or together, but always keep one foot in the best config. Consider testing very small LR step sizes or weight decay values that are multiples of 0.0001 to see if further improvement is possible.",
+        "reasoning": "The best result (val_bpb=0.1153) is orders of magnitude better than all discarded proposals, indicating that the combination of LR=0.003 and WEIGHT_DECAY=0.0001 is a gold mine. HIDDEN_DIM and BATCH_SIZE changes have never yielded improvement and only lead to bad loss, so freezing them narrows the search to the productive parameters. Switching to 'exploit' forces the inner loop to refine around the best config instead of wandering aimlessly. The guidance explicitly tells the inner loop what to tweak and what to avoid, preventing wasted iterations."
+      },
+      "best_bpb": 0.115305,
+      "config_after": {
+        "strategy": "exploit",
+        "frozen": [],
+        "guidance": "## Outer Loop Guidance (Cycle 1)\nFocus on learning rate and weight decay tuning near the best known config: LR around 0.003 and WEIGHT_DECAY around 0.0001. Do not change HIDDEN_DIM or BATCH_SIZE, as t"
+      }
+    },
+    {
+      "cycle": 1,
+      "analysis": {
+        "diagnosis": "The inner loop is stuck in a local optimum near LR=0.003, WEIGHT_DECAY=0.0001, making tiny perturbations that all produce catastrophic val_bpb (>5), indicating the search space is too narrow and overly sensitive. The best config was found early (iter 4) and subsequent attempts to fine-tune have failed, suggesting the model may benefit from exploring different parameter combinations rather than clinging to the best config.",
+        "strategy": "explore",
+        "freeze_params": [
+          "LR",
+          "WEIGHT_DECAY"
+        ],
+        "unfreeze_params": [
+          "HIDDEN_DIM",
+          "BATCH_SIZE"
+        ],
+        "guidance": "Switch to exploration mode. Freeze LR at 0.003 and WEIGHT_DECAY at 0.0001 (best known). Now focus on tuning HIDDEN_DIM and BATCH_SIZE, but use a systematic grid: try HIDDEN_DIM in [64, 128, 256, 512] and BATCH_SIZE in [16, 32, 64, 128], testing all combinations. If any combination improves val_bpb, keep it and continue exploring nearby values. If all fail, revert to the previous frozen config and consider a random restarts approach.",
+        "reasoning": "The current narrow tuning around the best LR/weight decay has yielded no improvement over 12 iterations, with all attempts causing performance collapse. This suggests the model is at a sharp local optimum that is highly sensitive to these parameters. To escape, we must explore previously frozen parameters (HIDDEN_DIM, BATCH_SIZE) which were prematurely abandoned after initial failures. A systematic grid search over these parameters will quickly identify if there's a better configuration region, breaking the current deadlock."
+      },
+      "best_bpb": 0.115305,
+      "config_after": {
+        "strategy": "explore",
+        "frozen": [],
+        "guidance": "## Outer Loop Guidance (Cycle 2)\nSwitch to exploration mode. Freeze LR at 0.003 and WEIGHT_DECAY at 0.0001 (best known). Now focus on tuning HIDDEN_DIM and BATCH_SIZE, but use a systematic grid: try H"
+      }
+    },
+    {
+      "cycle": 0,
+      "analysis": {
+        "diagnosis": "The inner loop has found a strong improvement at iteration 6 by jointly adjusting HIDDEN_DIM and LR, but since then it has repeatedly tried LR alone (6 times) without success, while ignoring BATCH_SIZE and WEIGHT_DECAY. The search is too narrow: it over-explores LR in isolation and fails to vary other promising dimensions that could complement the current best point.",
+        "strategy": "focused",
+        "freeze_params": [
+          "LR"
+        ],
+        "unfreeze_params": [
+          "BATCH_SIZE"
+        ],
+        "guidance": "Do not change LR; it is frozen at the current best value. Focus on jointly tuning HIDDEN_DIM (around 384) with BATCH_SIZE (try small or medium values) and WEIGHT_DECAY (try small nonzero values). Prefer proposals that vary at least two parameters together.",
+        "reasoning": "Freezing LR stops wasteful isolated LR tweaks that have consistently degraded performance. Unfreezing BATCH_SIZE adds a new knob that may interact productively with HIDDEN_DIM. The strategy switches to focused because a promising region has been found (iteration 6) and now the search should densely explore combinations around that point rather than broad exploration. Keeping at least two active parameters (HIDDEN_DIM and BATCH_SIZE, plus WEIGHT_DECAY) satisfies the rule."
+      },
+      "best_bpb": 0.173602,
+      "config_after": {
+        "strategy": "focused",
+        "frozen": [],
+        "guidance": "## Outer Loop Guidance (Cycle 1)\nDo not change LR; it is frozen at the current best value. Focus on jointly tuning HIDDEN_DIM (around 384) with BATCH_SIZE (try small or medium values) and WEIGHT_DECAY"
+      }
+    },
+    {
+      "cycle": 1,
+      "analysis": {
+        "diagnosis": "The inner loop is stuck in a random walk around poor configurations (val_bpb ~8) after the initial improvement. It has been repeatedly varying HIDDEN_DIM, BATCH_SIZE, and WEIGHT_DECAY but has not re-explored LR, which was instrumental in the earlier improvement (iteration 6 frozen LR after best). The current strategy of focused joint tuning on three parameters has not yielded any gain in 15 iterations, indicating the search space around these frozen LR is barren. The inner loop needs to widen its search and re-introduce LR exploration, as the current region is likely a plateau.",
+        "strategy": "explore",
+        "freeze_params": [],
+        "unfreeze_params": [
+          "LR"
+        ],
+        "guidance": "Return to exploring all four parameters. Prioritize varying LR along with other parameters. Do not fixate on the best-observed configuration from iteration 6; instead, explore new regions of LR (both higher and lower than the frozen value). Keep joint variations of at least two parameters, but now include LR frequently. Abandon the current focused valley.",
+        "reasoning": "The best val_bpb (0.173602) was achieved at iteration 6 when LR was still active. After freezing LR, the search collapsed into high-loss tails (~8). Re-enabling LR is critical to escape the current plateau. The current strategy is too narrow; switching to 'explore' and unfreezing LR broadens the search space. The parameters HIDDEN_DIM, BATCH_SIZE, and WEIGHT_DECAY already have many trials with no improvement, but unfreezing LR may unlock their potential when combined with different learning rates. Keeping all four active provides the needed diversity."
+      },
+      "best_bpb": 0.173602,
+      "config_after": {
+        "strategy": "explore",
+        "frozen": [],
+        "guidance": "## Outer Loop Guidance (Cycle 2)\nReturn to exploring all four parameters. Prioritize varying LR along with other parameters. Do not fixate on the best-observed configuration from iteration 6; instead,"
+      }
+    }
+  ],
+  "tabu_stats": {
+    "size": 1,
+    "max_size": 20
+  },
+  "schedule_stats": {
+    "level2_interval": 2,
+    "level3_interval": 2
+  },
+  "repeat": 4,
+  "status": "ok"
+}

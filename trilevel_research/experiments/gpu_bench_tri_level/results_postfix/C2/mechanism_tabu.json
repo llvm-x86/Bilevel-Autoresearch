@@ -1,0 +1,24 @@
+{
+  "max_size": 20,
+  "default_tenure": 3,
+  "run_token": "c8a868bab58c44a8ab06764da56dd5de",
+  "entries": [
+    {
+      "mechanism_name": "dedup_config_proposal",
+      "target": "GpuBenchRunner.__init__` and new class `ConfigDedupValidator",
+      "reason": "recent_success",
+      "added_at_round": 1,
+      "expires_at_round": 2,
+      "strategy": ""
+    },
+    {
+      "mechanism_name": "restart_with_higher_variance",
+      "target": "GpuBenchRunner` class (`__init__` and new method `_handle_stuck_state`)",
+      "reason": "recent_success",
+      "added_at_round": 2,
+      "expires_at_round": 3,
+      "strategy": ""
+    }
+  ],
+  "strategy_entries": []
+}

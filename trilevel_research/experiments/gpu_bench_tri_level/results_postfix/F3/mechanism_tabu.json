@@ -1,0 +1,24 @@
+{
+  "max_size": 20,
+  "default_tenure": 3,
+  "run_token": "005bec7c8b8b4f22a90b20b693543122",
+  "entries": [
+    {
+      "mechanism_name": "conservative_candidate_generation",
+      "target": "GpuBenchRunner class",
+      "reason": "recent_success",
+      "added_at_round": 1,
+      "expires_at_round": 2,
+      "strategy": ""
+    },
+    {
+      "mechanism_name": "relative_val_bpd_reporting",
+      "target": "GpuBenchRunner` class, specifically:",
+      "reason": "recent_success",
+      "added_at_round": 2,
+      "expires_at_round": 3,
+      "strategy": ""
+    }
+  ],
+  "strategy_entries": []
+}

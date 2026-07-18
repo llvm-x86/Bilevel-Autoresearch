@@ -1,0 +1,8 @@
+{
+  "session_id": "20260717_183211",
+  "patch_name": "meta_patch_20260717_183211",
+  "implementation_strategy": "new_helper_class",
+  "target": "MetaHelper_20260717_183211",
+  "code_retries": 0,
+  "hypothesis": "**Selected**: Hypothesis 4 — it provides the learning signal needed to break the cycle of repeated import failures, while keeping generation flexibility intact."
+}

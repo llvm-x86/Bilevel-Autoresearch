@@ -1,0 +1,1 @@
+self.elastic_explorer = None

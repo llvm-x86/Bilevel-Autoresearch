@@ -4,11 +4,40 @@
 
 | Verdict | Status |
 |---------|--------|
-| **Overall** | **NEGATIVE / INCONCLUSIVE** — no validated LLM/L3 task win; bi-level remains recommended default |
-| GPU bench 16-run ablation | **INCONCLUSIVE** — 0% inner-loop L2 apply (`import_fail`); L3 fired, 0% apply; Δval_bpb noise-level |
+| **Overall** | **NEGATIVE** — post-fix run shows tri-level ≈ bi-level (Δ = −0.0075, noise) with mechanisms fully engaged; bi-level remains recommended default |
+| **Post-fix 16-run ablation (2026-07-17)** | **NEGATIVE / VALID** — L2 apply 28/29 (97%), F−C = **−0.0075** (C 6.3607±0.0394, F 6.3532±0.0456); L3 fired 7×, **0/7 applied** |
+| GPU bench 16-run ablation (pre-fix) | **INCONCLUSIVE** — 0% inner-loop L2 apply (`import_fail`); L3 fired, 0% apply; Δval_bpb noise-level |
 | `bilevel_improves_trilevel` 4×4 ablation | **MARGINAL / NOT ATTRIBUTABLE** — +0.0123 Δval_bpb via bootstrap schedule, not LLM/L3 |
 | `run_iterative` (20% margin target) | **FAIL** — best +9.26% (unreliable); restart −0.30% / −0.49%; driver crashed twice |
 | CPU counterfactual (paper fixtures) | **Design-only** — +0.0067 estimated Δval_bpb; not live training evidence |
+
+---
+
+## Post-fix re-run (2026-07-17) — the first mechanistically valid comparison
+
+After fixing the L2 validate/import path, codegen sanitization, tabu run-scoping,
+and failure labeling (commits `9cdc725`–`837356e`, see `LLM_FIX_REPORT.md` and
+`tests/test_e2e_no_silent_failures.py`), the 16-run paired ablation was re-run from
+a clean results dir (8×C vs 8×F, RX 580, DeepSeek, parallel driver):
+
+| Metric | Group C (bi-level) | Group F (tri-level) |
+|--------|--------------------|---------------------|
+| Successful runs | 6/8 | 6/8 |
+| Mean improvement (Δval_bpb) | **6.3607 ± 0.0394** | **6.3532 ± 0.0456** |
+| L2 sessions applied+validated | 28/29 across both groups (97%) | same |
+| L3 meta-sessions | — | fired 7, **applied 0** |
+
+**F − C = −0.0075** (F nominally *worse*, well within noise). With L2 mechanisms
+actually engaged for the first time, tri-level still shows **no task benefit**.
+L3 meta-patches continue to fail validation 0/7 — genuine LLM codegen failure at
+the meta level, now correctly labeled instead of `import_fail`.
+
+4 runs (C5, C7, F3, F8) errored out with runner bugs surfaced by LLM-patched code
+(`'BenchTrace' object has no attribute 'results'`, `DiscardTracker` referenced
+before assignment) — recorded as errors, not silently dropped.
+
+Artifacts: [`experiments/gpu_bench_tri_level/results_postfix/`](experiments/gpu_bench_tri_level/results_postfix/).
+
 
 ---
 
@@ -24,7 +53,8 @@ No validated LLM/L3 win; one bootstrap-assisted marginal gain (+0.0123 Δval_bpb
 
 | Experiment | Δval_bpb / margin | L2 apply | L3 | Verdict |
 |------------|-------------------|----------|-----|---------|
-| Initial gpu_bench ablation (16 paired runs, AMD RX 580) | C 6.3715 ± 0.0372 vs F 6.3686 ± 0.0422; 4/8 paired wins for F | **0%** inner-loop (100% `import_fail`) | fired, **0% apply** | **INCONCLUSIVE** — mechanism untested; task diff noise-level |
+| Initial gpu_bench ablation (16 paired runs, AMD RX 580, pre-fix) | C 6.3715 ± 0.0372 vs F 6.3686 ± 0.0422; 4/8 paired wins for F | **0%** inner-loop (100% `import_fail`) | fired, **0% apply** | **INCONCLUSIVE** — mechanism untested; task diff noise-level |
+| **Post-fix re-run (2026-07-17, 16 paired runs)** | **C 6.3607 ± 0.0394 vs F 6.3532 ± 0.0456; F−C = −0.0075** | **28/29 (97%)** | fired 7, **0/7 applied** | **NEGATIVE / VALID** — mechanisms engaged; no tri-level task benefit |
 | `bilevel_improves_trilevel` 4×4 paired ablation | F − C = **+0.0123** (C mean 6.3380, F mean 6.3504) | **0%** on all 4×4 ablation repeats; ouroboros schedule L2 **1.0** (bootstrap only); LLM schedule **0/2** | meta-loop did not deliver validated win | **MARGINAL / NOT ATTRIBUTABLE** — bootstrap patch, not LLM/L3 |
 | `run_iterative` 20% relative margin | Iter 1 (PID 38608): **+9.26%** (**unreliable** — polluted by C outliers); restart (PID 44049): **−0.30%**, **−0.49%**; target 20% | bootstrap ouroboros each iter | L3 ~7% apply (anchor mismatch) | **FAIL** — driver crashed twice; no `iterative_summary.json` |
 | CPU counterfactual (paper Group C fixtures) | estimated **+0.0067** from reduced apply/revert | simulated 83% → 33% apply | 5 L3 fires, 3 tabu blocks | **Design-only** — not live training |

@@ -1,0 +1,8 @@
+{
+  "session_id": "20260717_182803",
+  "patch_name": "fix_outer_loop_error_classification",
+  "implementation_strategy": "replace_method",
+  "target": "run_mechanism_iteration` method (in the outer loop class that calls researcher code)",
+  "code_retries": 0,
+  "hypothesis": "**Selected**: None of the above. **All four hypotheses treat symptoms, not causes.** The root cause is likely a *design flaw* in how the outer loop classifies \"import failure\" vs \"runtime failure\"—it should treat *any* exception from `run_iteration` as a runtime failure, not an import failure. That "
+}

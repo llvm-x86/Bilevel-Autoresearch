@@ -1,0 +1,7 @@
+{
+  "group": "F",
+  "repeat": 3,
+  "status": "error",
+  "error": "name 'RelativeBPBTracker' is not defined",
+  "traceback": "Traceback (most recent call last):\n  File \"/home/a112/Bilevel-Autoresearch/trilevel_research/experiments/gpu_bench_tri_level/run_ablation.py\", line 146, in run_group\n    report = controller.run()\n  File \"/home/a112/Bilevel-Autoresearch/trilevel_research/domains/gpu_bench_opt/tri_level_controller.py\", line 168, in run\n    runner = PatchedRunner(\n  File \"/home/a112/Bilevel-Autoresearch/trilevel_research/experiments/gpu_bench_tri_level/results/F3/runner.py\", line 100, in __init__\n    _init_tracker = RelativeBPBTracker()\nNameError: name 'RelativeBPBTracker' is not defined\n"
+}

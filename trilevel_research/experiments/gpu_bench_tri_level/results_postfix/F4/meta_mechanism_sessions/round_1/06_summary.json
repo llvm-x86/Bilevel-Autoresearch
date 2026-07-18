@@ -1,0 +1,8 @@
+{
+  "session_id": "20260717_183157",
+  "patch_name": "versioned_rollback_context",
+  "implementation_strategy": "new_helper_class",
+  "target": "MetaHelper_20260717_183157",
+  "code_retries": 0,
+  "hypothesis": "**Selected**: Hypothesis 4 — The trace evidence of cascading import failures after a single bad generation directly matches the \"import poisoning\" pattern that versioned rollbacks are designed to address."
+}

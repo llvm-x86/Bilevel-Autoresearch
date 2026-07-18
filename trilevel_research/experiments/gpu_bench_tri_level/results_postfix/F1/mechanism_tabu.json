@@ -1,0 +1,24 @@
+{
+  "max_size": 20,
+  "default_tenure": 3,
+  "run_token": "0e03ca4adc9d4bcaa039f16031bb5c24",
+  "entries": [
+    {
+      "mechanism_name": "gpu_bench_mechanism_20260717_182444",
+      "target": "GpuBenchHelper_20260717_182444",
+      "reason": "recent_success",
+      "added_at_round": 1,
+      "expires_at_round": 2,
+      "strategy": ""
+    },
+    {
+      "mechanism_name": "elastic_radius_directed_exploration",
+      "target": "GpuBenchRunner` class, specifically `run_iteration` method and `__init__",
+      "reason": "recent_success",
+      "added_at_round": 2,
+      "expires_at_round": 3,
+      "strategy": ""
+    }
+  ],
+  "strategy_entries": []
+}

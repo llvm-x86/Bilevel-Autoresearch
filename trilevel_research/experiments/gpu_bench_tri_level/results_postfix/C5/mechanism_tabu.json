@@ -1,0 +1,16 @@
+{
+  "max_size": 20,
+  "default_tenure": 3,
+  "run_token": "a8af4765e70445a9886388a31493f8fd",
+  "entries": [
+    {
+      "mechanism_name": "gpu_bench_mechanism_20260717_182236",
+      "target": "GpuBenchHelper_20260717_182236",
+      "reason": "recent_success",
+      "added_at_round": 1,
+      "expires_at_round": 2,
+      "strategy": ""
+    }
+  ],
+  "strategy_entries": []
+}
